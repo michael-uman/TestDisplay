@@ -20,10 +20,12 @@ CONFIG(debug, debug|release) {
 
 SOURCES += \
     main.cpp \
-    mainwindow.cpp
+    mainwindow.cpp \
+    runguard.cpp
 
 HEADERS += \
-    mainwindow.h
+    mainwindow.h \
+    runguard.h
 
 FORMS +=
 
