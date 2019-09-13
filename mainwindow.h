@@ -8,10 +8,10 @@
 
 
 
-#define HEADING_FONT_NAME       "Helvetica"
-#define HEADING_FONT_POINTS     32
-#define MESSAGE_FONT_NAME       "Verdana"
-#define MESSAGE_FONT_POINTS     24
+#define HEADING_FONT_NAME       "Ubuntu"
+#define HEADING_FONT_POINTS     48
+#define MESSAGE_FONT_NAME       "FreeSans"
+#define MESSAGE_FONT_POINTS     32
 
 #define SERVER_PORT             4321
 
@@ -41,16 +41,16 @@ protected:
     void StopServer();
 
     void setText(QString line);
-
+    QSize getTextSize(QString text, QPainter & p);
 
 private:
     QTimer          updateTimer;
     QTcpServer *    tcpServer           = nullptr;
     QTcpSocket *    clientConnection    = nullptr;
 
-    QString         sHeading = "Test Display Application";
-    QString         sMessage = "(Waiting for client connection)";
-
+    QString         sHeading            = "Test Display Application";
+    QString         sMessage            = "(Waiting for client connection)";
+    QString         sDateTime;
     int             server_port         = SERVER_PORT;
     QString         heading_font_name   = HEADING_FONT_NAME;
     int             heading_font_size   = HEADING_FONT_POINTS;

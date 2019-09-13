@@ -2,6 +2,8 @@
 #include <QPaintEvent>
 #include <QPainter>
 #include <QTcpSocket>
+#include <QDate>
+#include <QCoreApplication>
 #include "mainwindow.h"
 //#include "ui_mainwindow.h"
 
@@ -32,14 +34,23 @@ MainWindow::~MainWindow()
 //    delete ui;
 }
 
+QSize MainWindow::getTextSize(QString text, QPainter & p) {
+    QFontMetrics fm = p.fontMetrics();
+    int tw = fm.width(text);
+    int th = fm.height();
+    return QSize(tw, th);
+}
+
 void MainWindow::paintEvent(QPaintEvent *)
 {
+    QString sText;
     QSize size = this->size();
     int sw = size.width();
     int sh = size.height();
     QPainter p(this);
     QColor bgColor(40, 26, 13);
     QBrush bgBrush(bgColor);
+    QSize txtSize;
 
     // Fill the window with the background color
     p.fillRect(0, 0, sw, sh, bgBrush);
@@ -50,22 +61,28 @@ void MainWindow::paintEvent(QPaintEvent *)
 
     p.setFont(QFont(heading_font_name, heading_font_size));
 
-    QFontMetrics fm = p.fontMetrics();
-    int tw = fm.width(sHeading);
-    int th;
+    txtSize = getTextSize(sHeading, p);
 
-    p.drawText((sw - tw)/2, 96, sHeading);
+    p.drawText((sw - txtSize.width())/2, 96, sHeading);
 
     p.setFont(QFont(message_font_name, message_font_size));
-    fm = p.fontMetrics();
-    tw = fm.width(sMessage);
-    th = fm.height();
-
+    txtSize = getTextSize(sMessage, p);
     // Draw the message in the center of the window
-    p.drawText((sw - tw)/2, (sh - th)/2, sMessage);
+    p.drawText((sw - txtSize.width())/2, (sh - txtSize.height())/2, sMessage);
 
-    p.setFont(QFont("courier bold", 12));
+    // Draw date/time
+
+    p.setFont(QFont("Ubuntu Light", 22));
+    txtSize = getTextSize(sDateTime, p);
+    p.drawText((sw - txtSize.width())/2, sh - 130, sDateTime);
+
+    p.setFont(QFont("Bitstream Vera Sans Mono", 12));
     p.drawText(64, sh - 24, "Hit the 'Q' key to EXIT");
+
+    sText = "© 2019 Wunder-Bar, Inc.";
+    txtSize = getTextSize(sText, p);
+
+    p.drawText(sw - 64 - txtSize.width(), sh - 24, sText);
 }
 
 void MainWindow::keyPressEvent(QKeyEvent * event)
@@ -75,7 +92,7 @@ void MainWindow::keyPressEvent(QKeyEvent * event)
 #endif
 
     if (event->key() == Qt::Key_Q) {
-        close();
+        QCoreApplication::quit();
     }
 }
 
@@ -85,6 +102,7 @@ void MainWindow::closeEvent(QCloseEvent *)
     qDebug() << Q_FUNC_INFO;
 #endif
     StopServer();
+    updateTimer.stop();
 }
 
 /**
@@ -117,6 +135,7 @@ void MainWindow::StopServer()
 #ifdef DEBUG
     qDebug() << Q_FUNC_INFO;
 #endif
+    tcpServer->close();
     delete tcpServer;
 
     tcpServer           = nullptr;
@@ -156,10 +175,14 @@ void MainWindow::setMessage(const QString & message) {
     repaint();
 }
 
+/**
+ * On the timer event grab the current date/time and refresh the display.
+ */
 void MainWindow::onTimer() {
 #ifdef DEBUG
     qDebug() << Q_FUNC_INFO;
 #endif
+    sDateTime = QDateTime::currentDateTime().toString();
     repaint();
 }
 
@@ -170,7 +193,8 @@ void MainWindow::onConnection()
     connect(clientConnection, &QAbstractSocket::disconnected,
             clientConnection, &QObject::deleteLater);
 
-    connect(clientConnection, &QAbstractSocket::readyRead, this, &MainWindow::onReadReady);
+    connect(clientConnection, &QAbstractSocket::readyRead,
+            this, &MainWindow::onReadReady);
 }
 
 void MainWindow::onReadReady()
