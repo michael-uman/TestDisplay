@@ -1,4 +1,4 @@
-QT       += core gui network
+QT       += core gui network xml
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -20,17 +20,26 @@ CONFIG(debug, debug|release) {
 }
 
 SOURCES += \
+    displaystyle.cpp \
+    displayxmlparser.cpp \
     main.cpp \
     mainwindow.cpp \
     runguard.cpp
 
 HEADERS += \
+    displaystyle.h \
+    displayxmlparser.h \
     mainwindow.h \
-    runguard.h
+    runguard.h \
+    testdisplay_defaults.h
 
 FORMS +=
+
+xmlfiles.path = /opt/$${TARGET}/bin
+xmlfiles.files += styles.xml
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
-!isEmpty(target.path): INSTALLS += target
+!isEmpty(target.path): INSTALLS += target xmlfiles
+

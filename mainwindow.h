@@ -5,15 +5,12 @@
 #include <QString>
 #include <QTimer>
 #include <QTcpServer>
+#include <QTouchDevice>
+#include <QTouchEvent>
 
+#include "testdisplay_defaults.h"
+#include "displaystyle.h"
 
-
-#define HEADING_FONT_NAME       "Ubuntu"
-#define HEADING_FONT_POINTS     48
-#define MESSAGE_FONT_NAME       "FreeSans"
-#define MESSAGE_FONT_POINTS     32
-
-#define SERVER_PORT             4321
 
 class MainWindow : public QMainWindow
 {
@@ -26,36 +23,48 @@ public:
     void setHeading(const QString & heading);
     void setMessage(const QString & message);
 
+    void enableDateTime(bool enabled);
+
+    inline bool inUse() const {
+        return bDisplayInUse;
+    }
 
 public slots:
     void onTimer();
     void onConnection();
-    void onReadReady();
+    void onReadReady(QTcpSocket * clientSocket);
 
 protected:
     void paintEvent(QPaintEvent * event) override;
     void keyPressEvent(QKeyEvent * event) override;
     void closeEvent(QCloseEvent * event) override;
+    void resizeEvent(QResizeEvent * event) override;
+    bool event(QEvent * event) override;
+    void mytouchEvent(QTouchEvent * event);
 
     bool StartServer();
     void StopServer();
 
-    void setText(QString line);
+    bool setText(QString line);
     QSize getTextSize(QString text, QPainter & p);
+    void resetText();
 
 private:
+    bool            bRunning            = false;
     QTimer          updateTimer;
     QTcpServer *    tcpServer           = nullptr;
-    QTcpSocket *    clientConnection    = nullptr;
+    bool            bDisplayInUse       = false;
 
-    QString         sHeading            = "Test Display Application";
-    QString         sMessage            = "(Waiting for client connection)";
+    QString         sHeading            = DEFAULT_HEADING;
+    QString         sMessage            = DEFAULT_MESSAGE;
+
+    bool            bTimeEnabled        = true;
     QString         sDateTime;
-    int             server_port         = SERVER_PORT;
-    QString         heading_font_name   = HEADING_FONT_NAME;
-    int             heading_font_size   = HEADING_FONT_POINTS;
-    QString         message_font_name   = MESSAGE_FONT_NAME;
-    int             message_font_size   = MESSAGE_FONT_POINTS;
+
+    quint16         server_port         = SERVER_PORT;
+
+    DisplayStylePtr style;
+    DisplayStyleVec styleVec;
 };
 
 #endif // MAINWINDOW_H

@@ -1,0 +1,12 @@
+#!/usr/bin/env xdg-open
+[Desktop Entry]
+Version=1.0
+Type=Application
+Terminal=false
+Icon=/usr/share/icons/TestDisplay/TestDisplay.xpm
+Icon[en_US]=/usr/share/icons/TestDisplay/TestDisplay.xpm
+Name[en_US]=TestDisplay
+Exec=/opt/TestDisplay/bin/TestDisplay
+Comment[en_US]=Run the Test Display Application
+Name=TestDisplay
+Comment=Run the Test Display Application
