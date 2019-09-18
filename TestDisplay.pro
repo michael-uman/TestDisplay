@@ -33,10 +33,16 @@ HEADERS += \
     runguard.h \
     testdisplay_defaults.h
 
+unix:SOURCES += linuxprocessentry.cpp \
+                linuxprocessmanager.cpp
+
+unix:HEADERS += linuxprocessentry.h \
+                linuxprocessmanager.h
+
 FORMS +=
 
 xmlfiles.path = /opt/$${TARGET}/bin
-xmlfiles.files += styles.xml
+xmlfiles.files += xml/styles.xml
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

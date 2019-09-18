@@ -1,0 +1,24 @@
+<stylesheet>
+    <style label="Default">
+        <font type="header" size="42" weight="bold">Ubuntu</font>
+        <font type="message" size="32">FreeSans</font>
+        <timer>1</timer>
+        <background>
+            <color>dark red</color>
+        </background>
+        <foreground>
+            <color>yellow</color>
+        </foreground>
+    </style>
+    <style label="Modern">
+        <font type="header" size="48" weight="bold">Ubuntu Condensed</font>
+        <font type="message" size="22">FreeSans</font>
+        <timer>1</timer>
+        <background>
+            <color>#ffffff</color>
+        </background>
+        <foreground>
+            <color>#20ac3f</color>
+        </foreground>
+    </style>
+</stylesheet>

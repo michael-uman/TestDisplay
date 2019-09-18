@@ -7,6 +7,7 @@
 #include <QTcpServer>
 #include <QTouchDevice>
 #include <QTouchEvent>
+#include <QProcess>
 
 #include "testdisplay_defaults.h"
 #include "displaystyle.h"
@@ -33,6 +34,7 @@ public slots:
     void onTimer();
     void onConnection();
     void onReadReady(QTcpSocket * clientSocket);
+    void processComplete(int exitCode, QProcess::ExitStatus exitStatus);
 
 protected:
     void paintEvent(QPaintEvent * event) override;
@@ -42,12 +44,14 @@ protected:
     bool event(QEvent * event) override;
     void mytouchEvent(QTouchEvent * event);
 
-    bool StartServer();
-    void StopServer();
+    bool            StartServer();
+    void            StopServer();
 
-    bool setText(QString line);
-    QSize getTextSize(QString text, QPainter & p);
-    void resetText();
+    bool            setText(QString line);
+    QSize           getTextSize(QString text, QPainter & p);
+    void            resetText();
+
+    bool            startBgProcess();
 
 private:
     bool            bRunning            = false;
@@ -65,6 +69,11 @@ private:
 
     DisplayStylePtr style;
     DisplayStyleVec styleVec;
+
+    bool            bgRunning           = false;
+    QProcess        bgProcess;
+
+    qint64          appPid              = -1;
 };
 
 #endif // MAINWINDOW_H

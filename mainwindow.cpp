@@ -4,14 +4,23 @@
 #include <QTcpSocket>
 #include <QDate>
 #include <QCoreApplication>
+#include <QDir>
+#include <signal.h>
+#include <sys/types.h>
 #include "mainwindow.h"
 #include "displayxmlparser.h"
+#ifdef __linux__
+    #include "linuxprocessmanager.h"
+#endif
 
 #define STYLE_XML_PATH      "/opt/TestDisplay/bin/styles.xml"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
+    appPid = QCoreApplication::applicationPid();
+    qDebug() << "Application process id = " << appPid;
+
     if (!StartServer()) {
         qDebug() << "Exiting application...";
         close();
@@ -51,6 +60,9 @@ MainWindow::MainWindow(QWidget *parent)
         styleVec.push_back(defaultStyle);
         style = defaultStyle;
     }
+
+    connect(&bgProcess, SIGNAL(finished(int, QProcess::ExitStatus)),
+            this, SLOT(processComplete(int, QProcess::ExitStatus)));
 
     sDateTime = QDateTime::currentDateTime().toString();
 
@@ -135,6 +147,8 @@ void MainWindow::keyPressEvent(QKeyEvent * event)
 
     if (event->key() == Qt::Key_Q) {
         QCoreApplication::quit();
+    } if (event->key() == Qt::Key_R) {
+        startBgProcess();
     }
 }
 
@@ -181,6 +195,8 @@ void MainWindow::mytouchEvent(QTouchEvent *event)
     }
 
     sMessage = "Touched";
+
+    startBgProcess();
 }
 
 /**
@@ -224,6 +240,44 @@ void MainWindow::resetText()
     sHeading = DEFAULT_HEADING;
     sMessage = DEFAULT_MESSAGE;
     repaint();
+}
+
+/**
+ * Start the background process running, if it is already running kill the child process
+ */
+
+bool MainWindow::startBgProcess()
+{
+    bool bResult = false;
+
+    qDebug() << Q_FUNC_INFO;
+
+    if (!bgRunning) {
+        QString script_path = QDir::homePath() + QDir::separator() + "python-unit-tests" + QDir::separator() + "launch-test.sh";
+        qDebug() << "Starting script @ " << script_path;
+
+        bgProcess.start(script_path);
+        if (bgProcess.waitForStarted()) {
+            qDebug() << "Process Id : " << bgProcess.processId();
+            bgRunning = bResult = true;
+        }
+    } else {
+        qDebug() << "Background process is already running...";
+        LinuxProcessManager     mgr;
+        pid_t pid = static_cast<pid_t>(bgProcess.processId());
+
+        if (mgr.update()) {
+            LinuxProcessVector procVec;
+
+            if (mgr.getProcessesWithParent(pid, procVec)) {
+                qDebug() << "Killing child process id " << pid;
+                pid_t childPid = procVec[0]->pid();
+                ::kill(childPid, SIGINT);
+            }
+        }
+    }
+
+    return bResult;
 }
 
 /**
@@ -330,4 +384,14 @@ void MainWindow::onReadReady(QTcpSocket * clientConnection)
             clientConnection = nullptr;
         }
     }
+}
+
+void MainWindow::processComplete(int exitCode, QProcess::ExitStatus exitStatus)
+{
+    Q_UNUSED(exitCode)
+    Q_UNUSED(exitStatus)
+    qDebug() << Q_FUNC_INFO;
+
+    bgProcess.close();
+    bgRunning = false;
 }
