@@ -30,14 +30,24 @@ HEADERS += \
     displaystyle.h \
     displayxmlparser.h \
     mainwindow.h \
+    processmanager.h \
     runguard.h \
     testdisplay_defaults.h
 
-unix:SOURCES += linuxprocessentry.cpp \
-                linuxprocessmanager.cpp
+unix {
+    SOURCES += linuxprocessentry.cpp \
+               linuxprocessmanager.cpp
+    HEADERS += linuxprocessentry.h \
+               linuxprocessmanager.h
+}
 
-unix:HEADERS += linuxprocessentry.h \
-                linuxprocessmanager.h
+win32 {
+    SOURCES += windowsprocessentry.cpp \
+               windowsprocessmanager.cpp
+
+    HEADERS += windowsprocessentry.h \
+               windowsprocessmanager.h
+}
 
 FORMS +=
 

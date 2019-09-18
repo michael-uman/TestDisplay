@@ -9,9 +9,7 @@
 #include <sys/types.h>
 #include "mainwindow.h"
 #include "displayxmlparser.h"
-#ifdef __linux__
-    #include "linuxprocessmanager.h"
-#endif
+#include "processmanager.h"
 
 #define STYLE_XML_PATH      "/opt/TestDisplay/bin/styles.xml"
 
@@ -194,8 +192,6 @@ void MainWindow::mytouchEvent(QTouchEvent *event)
         qDebug() << point.pos();
     }
 
-    sMessage = "Touched";
-
     startBgProcess();
 }
 
@@ -250,27 +246,34 @@ bool MainWindow::startBgProcess()
 {
     bool bResult = false;
 
+#ifdef DEBUG
     qDebug() << Q_FUNC_INFO;
+#endif
 
     if (!bgRunning) {
+
+        sMessage = "Starting script...";
+        repaint();
+
         QString script_path = QDir::homePath() + QDir::separator() + "python-unit-tests" + QDir::separator() + "launch-test.sh";
-        qDebug() << "Starting script @ " << script_path;
+        qInfo() << "Starting script @ " << script_path;
 
         bgProcess.start(script_path);
         if (bgProcess.waitForStarted()) {
-            qDebug() << "Process Id : " << bgProcess.processId();
+            qInfo() << "Process Id : " << bgProcess.processId();
             bgRunning = bResult = true;
         }
     } else {
-        qDebug() << "Background process is already running...";
-        LinuxProcessManager     mgr;
-        pid_t pid = static_cast<pid_t>(bgProcess.processId());
+        ProcessManager      mgr;
+        pid_t               pid = static_cast<pid_t>(bgProcess.processId());
+
+        qInfo() << "Background process is already running...";
 
         if (mgr.update()) {
-            LinuxProcessVector procVec;
+            ProcessVector procVec;
 
             if (mgr.getProcessesWithParent(pid, procVec)) {
-                qDebug() << "Killing child process id " << pid;
+                qInfo() << "Killing child process id " << pid;
                 pid_t childPid = procVec[0]->pid();
                 ::kill(childPid, SIGINT);
             }
@@ -388,9 +391,15 @@ void MainWindow::onReadReady(QTcpSocket * clientConnection)
 
 void MainWindow::processComplete(int exitCode, QProcess::ExitStatus exitStatus)
 {
-    Q_UNUSED(exitCode)
-    Q_UNUSED(exitStatus)
+#ifdef DEBUG
     qDebug() << Q_FUNC_INFO;
+#endif
+
+    if (exitStatus == QProcess::NormalExit) {
+        qInfo() << "Background process exited normally with code " << exitCode;
+    } else {
+        qInfo() << "Background Process crashed with code " << exitCode;
+    }
 
     bgProcess.close();
     bgRunning = false;

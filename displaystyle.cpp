@@ -12,12 +12,16 @@ DisplayStyle::DisplayStyle(const QString &label, QColor initFg, QColor initBg)
       bgColor(initBg),
       fgColor(initFg)
 {
+#ifdef DEBUG_STYLE
     qDebug() << Q_FUNC_INFO << " " << label;
+#endif
 }
 
 DisplayStyle::~DisplayStyle()
 {
+#ifdef DEBUG_STYLE
     qDebug() << Q_FUNC_INFO;
+#endif
 }
 
 bool DisplayStyle::isValid() const
