@@ -24,7 +24,8 @@ SOURCES += \
     displayxmlparser.cpp \
     main.cpp \
     mainwindow.cpp \
-    runguard.cpp
+    runguard.cpp \
+    testscriptmanager.cpp
 
 HEADERS += \
     displaystyle.h \
@@ -32,7 +33,8 @@ HEADERS += \
     mainwindow.h \
     processmanager.h \
     runguard.h \
-    testdisplay_defaults.h
+    testdisplay_defaults.h \
+    testscriptmanager.h
 
 unix {
     SOURCES += linuxprocessentry.cpp \
@@ -58,4 +60,7 @@ xmlfiles.files += xml/styles.xml
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target xmlfiles
+
+DISTFILES += \
+    xml/scripts.xml
 

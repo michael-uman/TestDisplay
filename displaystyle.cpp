@@ -4,7 +4,9 @@
 DisplayStyle::DisplayStyle(const QString &label)
     : styleLabel(label)
 {
+#ifdef DEBUG_STYLE
     qDebug() << Q_FUNC_INFO << " " << label;
+#endif
 }
 
 DisplayStyle::DisplayStyle(const QString &label, QColor initFg, QColor initBg)

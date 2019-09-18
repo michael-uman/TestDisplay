@@ -11,7 +11,7 @@
 
 #include "testdisplay_defaults.h"
 #include "displaystyle.h"
-
+#include "testscriptmanager.h"
 
 class MainWindow : public QMainWindow
 {
@@ -51,7 +51,9 @@ protected:
     QSize           getTextSize(QString text, QPainter & p);
     void            resetText();
 
-    bool            startBgProcess();
+    bool            startBgProcess(QString script_path);
+    bool            loadStyles();
+    bool            loadScripts();
 
 private:
     bool            bRunning            = false;
@@ -74,6 +76,8 @@ private:
     QProcess        bgProcess;
 
     qint64          appPid              = -1;
+
+    TestScriptMgr   scriptMgr;
 };
 
 #endif // MAINWINDOW_H

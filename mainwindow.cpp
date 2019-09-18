@@ -33,23 +33,7 @@ MainWindow::MainWindow(QWidget *parent)
     setAttribute(Qt::WA_AcceptTouchEvents);
     QMainWindow::showFullScreen();
 
-    // Read the styles from XML
-    DisplayXmlParser parser(styleVec);
-    QXmlSimpleReader reader;
-
-    reader.setContentHandler(&parser);
-    reader.setErrorHandler(&parser);
-
-    QFile file(STYLE_XML_PATH);
-    if (!file.open(QFile::ReadOnly | QFile::Text)) {
-        qDebug() << "Unable to open file!";
-    } else {
-        QXmlInputSource xmlSource(&file);
-        if (!reader.parse(xmlSource)) {
-            qDebug() << "Error parsing the XML file";
-        }
-    }
-
+    loadStyles();
     // If there are no styles in the vector, create a default style for use in mean time...
     if (styleVec.length() > 0) {
         style = styleVec[0];
@@ -58,6 +42,8 @@ MainWindow::MainWindow(QWidget *parent)
         styleVec.push_back(defaultStyle);
         style = defaultStyle;
     }
+
+    loadScripts();
 
     connect(&bgProcess, SIGNAL(finished(int, QProcess::ExitStatus)),
             this, SLOT(processComplete(int, QProcess::ExitStatus)));
@@ -128,7 +114,7 @@ void MainWindow::paintEvent(QPaintEvent * event)
         p.setFont(QFont("Bitstream Vera Sans Mono", 12));
         p.drawText(64, sh - 24, "Hit the 'Q' key to EXIT");
 
-        sText = "© 2019 Wunder-Bar, Inc.";
+        sText = "© 2019-2020 Wunder-Bar, Inc.";
         txtSize = getTextSize(sText, p);
 
         p.drawText(sw - 64 - txtSize.width(), sh - 24, sText);
@@ -146,7 +132,17 @@ void MainWindow::keyPressEvent(QKeyEvent * event)
     if (event->key() == Qt::Key_Q) {
         QCoreApplication::quit();
     } if (event->key() == Qt::Key_R) {
-        startBgProcess();
+        QString script_path = QDir::homePath() + QDir::separator() + "python-unit-tests" + QDir::separator() + "launch-test.sh";
+
+        startBgProcess(script_path);
+    } else {
+        TestScriptPtr scriptInfo = scriptMgr.getScriptForKey(event->key());
+
+        if (!scriptInfo.isNull()) {
+            qDebug() << "Found script for key : " << scriptInfo->name();
+
+            startBgProcess(scriptInfo->path());
+        }
     }
 }
 
@@ -192,7 +188,9 @@ void MainWindow::mytouchEvent(QTouchEvent *event)
         qDebug() << point.pos();
     }
 
-    startBgProcess();
+    QString script_path = QDir::homePath() + QDir::separator() + "python-unit-tests" + QDir::separator() + "launch-test.sh";
+
+    startBgProcess(script_path);
 }
 
 /**
@@ -242,7 +240,7 @@ void MainWindow::resetText()
  * Start the background process running, if it is already running kill the child process
  */
 
-bool MainWindow::startBgProcess()
+bool MainWindow::startBgProcess(QString script_path)
 {
     bool bResult = false;
 
@@ -255,7 +253,7 @@ bool MainWindow::startBgProcess()
         sMessage = "Starting script...";
         repaint();
 
-        QString script_path = QDir::homePath() + QDir::separator() + "python-unit-tests" + QDir::separator() + "launch-test.sh";
+        //QString script_path = QDir::homePath() + QDir::separator() + "python-unit-tests" + QDir::separator() + "launch-test.sh";
         qInfo() << "Starting script @ " << script_path;
 
         bgProcess.start(script_path);
@@ -281,6 +279,42 @@ bool MainWindow::startBgProcess()
     }
 
     return bResult;
+}
+
+bool MainWindow::loadStyles()
+{
+    // Read the styles from XML
+    DisplayXmlParser parser(styleVec);
+    QXmlSimpleReader reader;
+
+    reader.setContentHandler(&parser);
+    reader.setErrorHandler(&parser);
+
+    QFile file(STYLE_XML_PATH);
+    if (!file.open(QFile::ReadOnly | QFile::Text)) {
+        qDebug() << "Unable to open file!";
+        return false;
+    } else {
+        QXmlInputSource xmlSource(&file);
+        if (!reader.parse(xmlSource)) {
+            qDebug() << "Error parsing the XML file";
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool MainWindow::loadScripts()
+{
+    bool result = false;
+    if (scriptMgr.load("/home/developer/python-unit-tests/scripts.xml")) {
+        qInfo() << "Scripts loaded";
+        result = true;
+    } else {
+        qWarning() << "Error loading scripts";
+    }
+    return result;
 }
 
 /**
@@ -330,11 +364,13 @@ void MainWindow::enableDateTime(bool enabled) {
 }
 
 void MainWindow::setHeading(const QString & heading) {
+    qInfo() << "Set Heading : " << heading;
     sHeading = heading;
     repaint();
 }
 
 void MainWindow::setMessage(const QString & message) {
+    qInfo() << "Set Message : " << message;
     sMessage = message;
     repaint();
 }

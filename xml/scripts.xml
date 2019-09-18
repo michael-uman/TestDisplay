@@ -1,0 +1,15 @@
+<scripts>
+    <rootpath>/home/developer/python-unit-tests</rootpath>
+    <script>
+        <key>1</key>
+        <name>Simple Tests</name>
+        <description>Joe-Tap Unit Tests</description>
+        <path>launch-simple-test.sh</path>
+    </script>
+    <script>
+        <key>2</key>
+        <name>Cleaning Tests</name>
+        <description>Joe-Tap Clean Cycle Tests</description>
+        <path>launch-clean-test.sh</path>
+    </script>
+</scripts>
