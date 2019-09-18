@@ -47,7 +47,7 @@ protected:
     bool            StartServer();
     void            StopServer();
 
-    bool            setText(QString line);
+    bool            setText(QString line, QString & response);
     QSize           getTextSize(QString text, QPainter & p);
     void            resetText();
 

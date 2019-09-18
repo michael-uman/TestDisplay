@@ -35,6 +35,8 @@ public:
     QColor          GetBgColor() const;
     QColor          GetFgColor() const;
 
+    QString         GetLabel() const;
+
 protected:
     QString         styleLabel;
 

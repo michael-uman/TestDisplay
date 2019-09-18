@@ -107,3 +107,6 @@ QColor DisplayStyle::GetFgColor() const
     return fgColor;
 }
 
+QString DisplayStyle::GetLabel() const {
+    return styleLabel;
+}

@@ -292,12 +292,12 @@ bool MainWindow::loadStyles()
 
     QFile file(STYLE_XML_PATH);
     if (!file.open(QFile::ReadOnly | QFile::Text)) {
-        qDebug() << "Unable to open file!";
+        qWarning() << "Unable to open file!";
         return false;
     } else {
         QXmlInputSource xmlSource(&file);
         if (!reader.parse(xmlSource)) {
-            qDebug() << "Error parsing the XML file";
+            qWarning() << "Error parsing the XML file";
             return false;
         }
     }
@@ -308,7 +308,10 @@ bool MainWindow::loadStyles()
 bool MainWindow::loadScripts()
 {
     bool result = false;
-    if (scriptMgr.load("/home/developer/python-unit-tests/scripts.xml")) {
+    QString xmlFilePath;
+
+    xmlFilePath = QDir::homePath() + "/python-unit-tests/scripts.xml";
+    if (scriptMgr.load(xmlFilePath)) {
         qInfo() << "Scripts loaded";
         result = true;
     } else {
@@ -320,14 +323,18 @@ bool MainWindow::loadScripts()
 /**
  *  Set the text in the display parsing the tag for header/message.
  */
-bool MainWindow::setText(QString line)
+bool MainWindow::setText(QString line, QString &response)
 {
-    bool bResult = false;
-    QStringList splitted = line.split(':');
-    int splitsize = splitted.length();
+    bool            bResult     = false;
+    QStringList     splitted    = line.split(':');
+    int             splitsize   = splitted.length();
+
 #ifdef DEBUG
     qDebug() << splitted;
 #endif
+
+    response = "OK";
+
     if (splitsize == 1) {
         setMessage(splitted[0]);
     } else if (splitsize == 2) {
@@ -345,9 +352,20 @@ bool MainWindow::setText(QString line)
             int index = splitted[1].toInt();
             if (index < styleVec.length()) {
                 style = styleVec[index];
+            } else {
+                response = "FAIL";
             }
+        } else if (splitted[0] == "STAT") {
+            response = QString("STAT:");
+            response += sHeading + ":" + sMessage + ":";
+            response += style->GetLabel() + ":";
+            response += (bTimeEnabled == true)?"1":"0";
+        } else if (splitted[0] == "KILL") {
+            QKeyEvent quitEvent(QEvent::KeyPress, 'Q', Qt::NoModifier);
+            QCoreApplication::sendEvent(this, &quitEvent);
         } else {
             qDebug() << "Unknown tag " << splitted[0];
+            response = "FAIL";
         }
     } else if (splitsize == 3) {
         if (splitted[0] == "TEXT") {
@@ -409,14 +427,16 @@ void MainWindow::onReadReady(QTcpSocket * clientConnection)
 
     while (!bDisconnect && clientConnection->canReadLine()) {
         QByteArray data = clientConnection->readLine();
+        QString response;
         QString line = QString(data).replace("\n", "").replace("\r", "");
 #ifdef DEBUG
         qDebug() << line;
 #endif
 
-        bDisconnect = setText(line);
+        bDisconnect = setText(line, response);
+        response += "\n";
 
-        clientConnection->write("OK\n", 3);
+        clientConnection->write(response.toUtf8());
 
         if (bDisconnect) {
             clientConnection->disconnectFromHost();
