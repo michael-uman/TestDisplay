@@ -49,6 +49,8 @@ win32 {
 
     HEADERS += windowsprocessentry.h \
                windowsprocessmanager.h
+
+    LIBS += -lpsapi
 }
 
 FORMS +=

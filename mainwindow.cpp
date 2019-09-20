@@ -11,7 +11,11 @@
 #include "displayxmlparser.h"
 #include "processmanager.h"
 
+#if defined(__linux__)
 #define STYLE_XML_PATH      "/opt/TestDisplay/bin/styles.xml"
+#elif defined(__WIN32__)
+#define STYLE_XML_PATH      "C:/Program Files/TestDisplay/styles.xml"
+#endif
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -273,7 +277,9 @@ bool MainWindow::startBgProcess(QString script_path)
             if (mgr.getProcessesWithParent(pid, procVec)) {
                 qInfo() << "Killing child process id " << pid;
                 pid_t childPid = procVec[0]->pid();
+#ifdef __linux__
                 ::kill(childPid, SIGINT);
+#endif
             }
         }
     }

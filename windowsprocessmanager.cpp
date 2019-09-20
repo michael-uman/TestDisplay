@@ -43,9 +43,7 @@ void PrintProcessNameAndID( DWORD processID )
 
             GetModuleInformation( hProcess, hMod, &moduleInfo, sizeof(moduleInfo));
 
-            qDebug() << "OK";
-
-            pNtQuery
+//            qDebug() << "OK";
         }
     }
 
