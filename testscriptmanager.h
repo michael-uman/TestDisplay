@@ -49,6 +49,9 @@ public:
     void clear();
 
     TestScriptPtr       getScriptForKey(int key) const;
+    TestScriptVector & getVec()  {
+        return scriptVec;
+    }
 
 private:
     TestScriptVector    scriptVec;
