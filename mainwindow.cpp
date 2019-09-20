@@ -54,6 +54,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     sDateTime = QDateTime::currentDateTime().toString();
 
+    state    = displayState::DISPLAY_MAIN;
     bRunning = true;
 
     repaint();
@@ -74,6 +75,81 @@ QSize MainWindow::getTextSize(QString text, QPainter & p) {
     int th = fm.height();
     return QSize(tw, th);
 }
+
+void MainWindow::paintMainDisplay()
+{
+    QString     sText;
+    QSize       size(this->size());
+    int         sw(size.width());
+    int         sh(size.height());
+    QPainter    p(this);
+    QBrush      bgBrush(style->GetBgColor());
+    QSize       txtSize;
+
+    // Fill the window with the background color
+    p.fillRect(0, 0, sw, sh, bgBrush);
+
+    // Draw the text in white
+    p.setPen(style->GetFgColor());
+
+    // Draw the heading horizontally centered at the top of the window
+    p.setFont(style->GetHeadingFont());
+    txtSize = getTextSize(sHeading, p);
+    p.drawText((sw - txtSize.width())/2, 96, sHeading);
+
+    // Draw the message in the center of the window
+    p.setFont(style->GetMessageFont());
+    txtSize = getTextSize(sMessage, p);
+    p.drawText((sw - txtSize.width())/2, (sh - txtSize.height())/2, sMessage);
+
+    // Draw date/time
+    if (bTimeEnabled) {
+        p.setFont(QFont("Ubuntu Light", 22));
+        txtSize = getTextSize(sDateTime, p);
+        p.drawText((sw - txtSize.width())/2, sh - 130, sDateTime);
+    }
+
+    p.setFont(QFont("Bitstream Vera Sans Mono", 12));
+    p.drawText(64, sh - 24, "Hit the 'Q' key to EXIT");
+
+    sText = "© 2019-2020 Wunder-Bar, Inc.";
+    txtSize = getTextSize(sText, p);
+
+    p.drawText(sw - 64 - txtSize.width(), sh - 24, sText);
+}
+
+void MainWindow::paintMenuDisplay()
+{
+    QString     sText;
+    QSize       size(this->size());
+    int         sw(size.width());
+    int         sh(size.height());
+    QPainter    p(this);
+    QBrush      bgBrush(style->GetBgColor());
+    QSize       txtSize;
+    int         index = 0;
+    // Fill the window with the background color
+    p.fillRect(0, 0, sw, sh, bgBrush);
+
+    sText = "Select Script to Run";
+    p.setPen(QColor("white"));
+    p.setFont(QFont("Bitstream Vera Sans", 36));
+    txtSize = getTextSize(sText, p);
+    p.drawText((sw - txtSize.width())/2, 64, sText);
+
+    p.setFont(QFont("Bitstream Vera Sans", 24));
+
+    for (auto script : scriptMgr.getVec()) {
+        sText =  script->name();
+        txtSize = getTextSize(sText, p);
+        p.drawText((sw - txtSize.width())/2, sh - 300 + (index * (txtSize.height() + 2)), sText);
+
+        index++;
+    }
+
+
+}
+
 // #281a0d
 //QColor bgColor(40, 26, 13);
 /**
@@ -83,45 +159,21 @@ QSize MainWindow::getTextSize(QString text, QPainter & p) {
 void MainWindow::paintEvent(QPaintEvent * event)
 {
     if (bRunning) {
-
-        QString     sText;
-        QSize       size(this->size());
-        int         sw(size.width());
-        int         sh(size.height());
-        QPainter    p(this);
-        QBrush      bgBrush(style->GetBgColor());
-        QSize       txtSize;
-
-        // Fill the window with the background color
-        p.fillRect(0, 0, sw, sh, bgBrush);
-
-        // Draw the text in white
-        p.setPen(style->GetFgColor());
-
-        // Draw the heading horizontally centered at the top of the window
-        p.setFont(style->GetHeadingFont());
-        txtSize = getTextSize(sHeading, p);
-        p.drawText((sw - txtSize.width())/2, 96, sHeading);
-
-        // Draw the message in the center of the window
-        p.setFont(style->GetMessageFont());
-        txtSize = getTextSize(sMessage, p);
-        p.drawText((sw - txtSize.width())/2, (sh - txtSize.height())/2, sMessage);
-
-        // Draw date/time
-        if (bTimeEnabled) {
-            p.setFont(QFont("Ubuntu Light", 22));
-            txtSize = getTextSize(sDateTime, p);
-            p.drawText((sw - txtSize.width())/2, sh - 130, sDateTime);
+        switch (state) {
+        case displayState::DISPLAY_BLANK:
+            break;
+        case displayState::DISPLAY_MAIN:
+            paintMainDisplay();
+            break;
+        case displayState::DISPLAY_MENU:
+            paintMenuDisplay();
+            break;
+        case displayState::DISPLAY_DIALOG:
+            break;
+        case displayState::DISPLAY_TEST:
+            break;
         }
 
-        p.setFont(QFont("Bitstream Vera Sans Mono", 12));
-        p.drawText(64, sh - 24, "Hit the 'Q' key to EXIT");
-
-        sText = "© 2019-2020 Wunder-Bar, Inc.";
-        txtSize = getTextSize(sText, p);
-
-        p.drawText(sw - 64 - txtSize.width(), sh - 24, sText);
     }
 
     QWidget::paintEvent(event);
@@ -135,10 +187,16 @@ void MainWindow::keyPressEvent(QKeyEvent * event)
 
     if (event->key() == Qt::Key_Q) {
         QCoreApplication::quit();
-    } if (event->key() == Qt::Key_R) {
+    } else if (event->key() == Qt::Key_R) {
         QString script_path = QDir::homePath() + QDir::separator() + "python-unit-tests" + QDir::separator() + "launch-test.sh";
 
         startBgProcess(script_path);
+    } else if (event->key() == Qt::Key_M) {
+        if (state == displayState::DISPLAY_MAIN) {
+            state = displayState::DISPLAY_MENU;
+        } else {
+            state = displayState::DISPLAY_MAIN;
+        }
     } else {
         TestScriptPtr scriptInfo = scriptMgr.getScriptForKey(event->key());
 

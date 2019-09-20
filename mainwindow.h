@@ -13,6 +13,14 @@
 #include "displaystyle.h"
 #include "testscriptmanager.h"
 
+enum class displayState {
+    DISPLAY_BLANK,
+    DISPLAY_MAIN,
+    DISPLAY_MENU,
+    DISPLAY_DIALOG,
+    DISPLAY_TEST,
+};
+
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -44,6 +52,9 @@ protected:
     bool event(QEvent * event) override;
     void mytouchEvent(QTouchEvent * event);
 
+    void            paintMainDisplay();
+    void            paintMenuDisplay();
+
     bool            StartServer();
     void            StopServer();
 
@@ -57,6 +68,8 @@ protected:
 
 private:
     bool            bRunning            = false;
+    displayState    state               = displayState::DISPLAY_BLANK;
+
     QTimer          updateTimer;
     QTcpServer *    tcpServer           = nullptr;
     bool            bDisplayInUse       = false;
