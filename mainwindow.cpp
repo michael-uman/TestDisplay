@@ -5,6 +5,7 @@
 #include <QDate>
 #include <QCoreApplication>
 #include <QDir>
+#include <QHostInfo>
 #include <signal.h>
 #include <sys/types.h>
 #include "mainwindow.h"
@@ -110,7 +111,7 @@ void MainWindow::paintMainDisplay()
     }
 
     p.setFont(QFont("Bitstream Vera Sans Mono", 12));
-    p.drawText(64, sh - 24, "Hit the 'Q' key to EXIT");
+    p.drawText(64, sh - 24, "'Q' => EXIT / 'S' => STOP");
 
     sText = "© 2019-2020 Wunder-Bar, Inc.";
     txtSize = getTextSize(sText, p);
@@ -146,8 +147,6 @@ void MainWindow::paintMenuDisplay()
 
         index++;
     }
-
-
 }
 
 // #281a0d
@@ -197,13 +196,23 @@ void MainWindow::keyPressEvent(QKeyEvent * event)
         } else {
             state = displayState::DISPLAY_MAIN;
         }
+    } else if (event->key() == Qt::Key_S) {
+        if (bgRunning) {
+            stopBgProcess();
+        } else {
+            qWarning() << "Attempted to stop a script but no script running...";
+        }
     } else {
-        TestScriptPtr scriptInfo = scriptMgr.getScriptForKey(event->key());
+        if (!bgRunning) {
+            TestScriptPtr scriptInfo = scriptMgr.getScriptForKey(event->key());
 
-        if (!scriptInfo.isNull()) {
-            qDebug() << "Found script for key : " << scriptInfo->name();
+            if (!scriptInfo.isNull()) {
+                qDebug() << "Found script for key : " << scriptInfo->name();
 
-            startBgProcess(scriptInfo->path());
+                startBgProcess(scriptInfo->path());
+            }
+        } else {
+            qWarning() << "Attempted to start a script but a script is already running...";
         }
     }
 }
@@ -293,8 +302,9 @@ void MainWindow::StopServer()
 
 void MainWindow::resetText()
 {
-    sHeading = DEFAULT_HEADING;
-    sMessage = DEFAULT_MESSAGE;
+    sHeading        = DEFAULT_HEADING;
+    sMessage        = DEFAULT_MESSAGE;
+    bTimeEnabled    = true;
     repaint();
 }
 
@@ -321,13 +331,26 @@ bool MainWindow::startBgProcess(QString script_path)
         bgProcess.start(script_path);
         if (bgProcess.waitForStarted()) {
             qInfo() << "Process Id : " << bgProcess.processId();
+            runningScriptName = script_path;
             bgRunning = bResult = true;
         }
     } else {
+        qWarning() << "Process " << bgProcess.processId() << " already running...";
+    }
+
+    return bResult;
+}
+
+bool MainWindow::stopBgProcess()
+{
+    bool bResult = false;
+
+    if (bgRunning) {
         ProcessManager      mgr;
         pid_t               pid = static_cast<pid_t>(bgProcess.processId());
 
-        qInfo() << "Background process is already running...";
+        sMessage = "Stopping script...";
+        repaint();
 
         if (mgr.update()) {
             ProcessVector procVec;
@@ -338,8 +361,11 @@ bool MainWindow::startBgProcess(QString script_path)
 #ifdef __linux__
                 ::kill(childPid, SIGINT);
 #endif
+                bResult = true;
             }
         }
+    } else {
+        qWarning() << "No background process is running...";
     }
 
     return bResult;
@@ -385,60 +411,142 @@ bool MainWindow::loadScripts()
 }
 
 /**
- *  Set the text in the display parsing the tag for header/message.
+ *  Parsing the user supplied line.
  */
-bool MainWindow::setText(QString line, QString &response)
+bool MainWindow::parseText(QString line, QString &response)
 {
     bool            bResult     = false;
-    QStringList     splitted    = line.split(':');
-    int             splitsize   = splitted.length();
+    QStringList     element     = line.split(':');
+    int             splitsize   = element.length();
 
 #ifdef DEBUG
-    qDebug() << splitted;
+    qDebug() << element;
 #endif
 
     response = "OK";
 
     if (splitsize == 1) {
-        setMessage(splitted[0]);
+        setMessage(element[0]);
     } else if (splitsize == 2) {
-        if (splitted[0] == "HEAD") {
-            setHeading(splitted[1]);
-        } else if (splitted[0] == "MESG") {
-            setMessage(splitted[1]);
-        } else if (splitted[0] == "QUIT") {
+        if (element[0] == "HEAD") {
+            setHeading(element[1]);
+        } else if (element[0] == "MESG") {
+            setMessage(element[1]);
+        } else if (element[0] == "QUIT") {
             bResult = true;
-        } else if (splitted[0] == "TIME") {
-            bTimeEnabled = (splitted[1] == "1");
-        } else if (splitted[0] == "REST") {
+        } else if (element[0] == "TIME") {
+            bTimeEnabled = (element[1] == "1");
+        } else if (element[0] == "REST") {
             resetText();
-        } else if (splitted[0] == "STYL") {
-            int index = splitted[1].toInt();
+        } else if (element[0] == "STYL") {
+            int index = element[1].toInt();
             if (index < styleVec.length()) {
                 style = styleVec[index];
             } else {
                 response = "FAIL";
             }
-        } else if (splitted[0] == "STAT") {
-            response = QString("STAT:");
-            response += sHeading + ":" + sMessage + ":";
-            response += style->GetLabel() + ":";
-            response += (bTimeEnabled == true)?"1":"0";
-        } else if (splitted[0] == "KILL") {
+        } else if (element[0] == "STAT") {
+            response = get_status_string();
+        } else if (element[0] == "RUNK") {
+//          qDebug() << "option " << element[1] << " len " << element[1].length();
+            if (element[1].length() == 1) {
+                TestScriptPtr script = scriptMgr.getScriptForKey(element[1].front().toLatin1());
+                if (!script.isNull()) {
+                    if (!startBgProcess(script->path())) {
+                        response = "FAIL";
+                    }
+                } else {
+                    response = "FAIL";
+                }
+            } else {
+                response = "FAIL";
+            }
+        } else if (element[0] == "STOP") {
+            if (bgRunning) {
+                stopBgProcess();
+            } else {
+                qWarning() << "No background process is running...";
+                response = "FAIL";
+            }
+        } else if (element[0] == "LIST") {
+            if (element[1] == "SCRIPT") {
+                response = get_script_list();
+            } else if (element[1] == "STYLE") {
+                response = get_style_list();
+            } else {
+                qWarning() << "Invalid LIST type " << element[1];
+                response = "FAIL";
+            }
+        } else if (element[0] == "KILL") {
             QKeyEvent quitEvent(QEvent::KeyPress, 'Q', Qt::NoModifier);
             QCoreApplication::sendEvent(this, &quitEvent);
         } else {
-            qDebug() << "Unknown tag " << splitted[0];
+            qDebug() << "Unknown tag " << element[0];
             response = "FAIL";
         }
     } else if (splitsize == 3) {
-        if (splitted[0] == "TEXT") {
-            setHeading(splitted[1]);
-            setMessage(splitted[2]);
+        if (element[0] == "TEXT") {
+            setHeading(element[1]);
+            setMessage(element[2]);
+        } else {
+            response = "FAIL";
         }
     }
 
     return bResult;
+}
+
+QString MainWindow::get_status_string()
+{
+    QString response;
+
+    response = QString("STAT:");
+#if 0
+    response += QHostInfo::localHostName() + ":";
+#endif
+    response += sHeading + ":" + sMessage + ":";
+    response += style->GetLabel() + ":";
+    response += QString((bTimeEnabled == true)?"1":"0") +":";
+    response += QString((bgRunning == true)?"1":"0") + ":";
+    response += runningScriptName;
+
+    return response;
+}
+
+QString MainWindow::get_script_list()
+{
+    QString result;
+    QTextStream stream(&result);
+    if (scriptMgr.size() > 0) {
+        for (const auto & script : scriptMgr.getVec()) {
+            stream <<  script->key() << ":" << script->name() << ":" << script->path() << endl;
+        }
+        stream << "OK";
+    } else {
+        stream << "OK";
+    }
+
+    return result;
+}
+
+QString MainWindow::get_style_list()
+{
+    QString result;
+    QTextStream stream(&result);
+    if (scriptMgr.size() > 0) {
+        for (const auto & style : styleVec) {
+            stream <<  style->GetLabel() << ":" <<
+                       style->GetHeadingFontSpec() << ":" <<
+                       style->GetMessageFontSpec() << ":" <<
+                       style->GetBgColor().name() << ":" <<
+                       style->GetFgColor().name() << endl;
+        }
+        stream << "OK";
+    } else {
+        stream << "OK";
+    }
+
+    return result;
 }
 
 void MainWindow::enableDateTime(bool enabled) {
@@ -497,7 +605,7 @@ void MainWindow::onReadReady(QTcpSocket * clientConnection)
         qDebug() << line;
 #endif
 
-        bDisconnect = setText(line, response);
+        bDisconnect = parseText(line, response);
         response += "\n";
 
         clientConnection->write(response.toUtf8());
@@ -523,4 +631,5 @@ void MainWindow::processComplete(int exitCode, QProcess::ExitStatus exitStatus)
 
     bgProcess.close();
     bgRunning = false;
+    runningScriptName.clear();
 }

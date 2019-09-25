@@ -97,6 +97,18 @@ QFont DisplayStyle::GetMessageFont() const
     return font;
 }
 
+QString DisplayStyle::GetHeadingFontSpec() const
+{
+    QString spec = headingFontName + ":" + QString::number(headingFontSize);
+    return spec;
+}
+
+QString DisplayStyle::GetMessageFontSpec() const
+{
+    QString spec = messageFontName + ":" + QString::number(messageFontSize);
+    return spec;
+}
+
 QColor DisplayStyle::GetBgColor() const
 {
     return bgColor;

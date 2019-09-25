@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QVector>
 #include <QSharedPointer>
+#include <QMutex>
 
 class TestScript : public QObject {
     Q_OBJECT
@@ -49,11 +50,14 @@ public:
     void clear();
 
     TestScriptPtr       getScriptForKey(int key) const;
-    TestScriptVector & getVec()  {
+    TestScriptVector &  getVec()  {
         return scriptVec;
     }
-
+    int                 size() const {
+        return scriptVec.size();
+    }
 private:
+    QMutex              scriptMgrLock;
     TestScriptVector    scriptVec;
 
     QString             rootPath;

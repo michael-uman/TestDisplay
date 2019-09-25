@@ -58,14 +58,18 @@ protected:
     bool            StartServer();
     void            StopServer();
 
-    bool            setText(QString line, QString & response);
+    bool            parseText(QString line, QString & response);
     QSize           getTextSize(QString text, QPainter & p);
     void            resetText();
 
     bool            startBgProcess(QString script_path);
+    bool            stopBgProcess();
+
     bool            loadStyles();
     bool            loadScripts();
-
+    QString         get_status_string();
+    QString         get_script_list();
+    QString         get_style_list();
 private:
     bool            bRunning            = false;
     displayState    state               = displayState::DISPLAY_BLANK;
@@ -86,6 +90,7 @@ private:
     DisplayStyleVec styleVec;
 
     bool            bgRunning           = false;
+    QString         runningScriptName;
     QProcess        bgProcess;
 
     qint64          appPid              = -1;

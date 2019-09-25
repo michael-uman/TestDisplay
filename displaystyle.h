@@ -32,6 +32,8 @@ public:
 
     QFont           GetHeadingFont() const;
     QFont           GetMessageFont() const;
+    QString         GetHeadingFontSpec() const;
+    QString         GetMessageFontSpec() const;
     QColor          GetBgColor() const;
     QColor          GetFgColor() const;
 

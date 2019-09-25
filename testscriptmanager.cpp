@@ -39,6 +39,7 @@ TestScriptMgr::~TestScriptMgr()
 
 bool TestScriptMgr::load(QString filename)
 {
+    QMutexLocker        lock(&scriptMgrLock);
     QDomDocument        scriptDom("scripts");
     QFile               xmlFile(filename);
 
@@ -117,11 +118,20 @@ bool TestScriptMgr::load(QString filename)
 
 void TestScriptMgr::clear()
 {
+    QMutexLocker    lock(&scriptMgrLock);
     scriptVec.clear();
 }
 
+/**
+ * Return the pointer to the script object for the specified key.
+ *
+ * \param key Keyboard character to invoke script.
+ */
+
 TestScriptPtr TestScriptMgr::getScriptForKey(int key) const
 {
+    QMutexLocker lock(const_cast<QMutex*>(&scriptMgrLock));
+
     for (auto script : scriptVec) {
         if (script->key() == key) {
             return script;
