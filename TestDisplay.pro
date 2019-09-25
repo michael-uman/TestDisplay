@@ -25,6 +25,7 @@ SOURCES += \
     main.cpp \
     mainwindow.cpp \
     runguard.cpp \
+    scheduler.cpp \
     testscriptmanager.cpp
 
 HEADERS += \
@@ -33,6 +34,7 @@ HEADERS += \
     mainwindow.h \
     processmanager.h \
     runguard.h \
+    scheduler.h \
     testdisplay_defaults.h \
     testscriptmanager.h
 

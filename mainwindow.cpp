@@ -53,6 +53,13 @@ MainWindow::MainWindow(QWidget *parent)
     connect(&bgProcess, SIGNAL(finished(int, QProcess::ExitStatus)),
             this, SLOT(processComplete(int, QProcess::ExitStatus)));
 
+    /* Load schedule */
+    QString sched_path = QDir::homePath() + QDir::separator() + "python-unit-tests" + QDir::separator() + "schedule.xml";
+
+    if (!sched.loadSchedule(sched_path)) {
+        qWarning() << "Unable to load schedule!";
+    }
+
     sDateTime = QDateTime::currentDateTime().toString();
 
     state    = displayState::DISPLAY_MAIN;
@@ -357,9 +364,11 @@ bool MainWindow::stopBgProcess()
 
             if (mgr.getProcessesWithParent(pid, procVec)) {
                 qInfo() << "Killing child process id " << pid;
-                pid_t childPid = procVec[0]->pid();
 #ifdef __linux__
+                pid_t childPid = procVec[0]->pid();
                 ::kill(childPid, SIGINT);
+#else
+                bgProcess.terminate();
 #endif
                 bResult = true;
             }

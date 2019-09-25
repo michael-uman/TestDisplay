@@ -12,6 +12,7 @@
 #include "testdisplay_defaults.h"
 #include "displaystyle.h"
 #include "testscriptmanager.h"
+#include "scheduler.h"
 
 enum class displayState {
     DISPLAY_BLANK,
@@ -96,6 +97,8 @@ private:
     qint64          appPid              = -1;
 
     TestScriptMgr   scriptMgr;
+
+    Scheduler       sched;
 };
 
 #endif // MAINWINDOW_H
