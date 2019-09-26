@@ -6,19 +6,21 @@
 #include <QCoreApplication>
 #include <QDir>
 #include <QHostInfo>
-#include <signal.h>
-#include <sys/types.h>
+#ifdef __linux__
+    #include <signal.h>
+    #include <sys/types.h>
+#endif
 #include "mainwindow.h"
 #include "displayxmlparser.h"
 #include "processmanager.h"
 
-#if defined(__linux__)
-#define STYLE_XML_PATH      "/opt/TestDisplay/bin/styles.xml"
-#elif defined(__WIN32__)
-#define STYLE_XML_PATH      "C:/Program Files/TestDisplay/styles.xml"
-#endif
+QStringList MainWindow::optionFilenames = {
+    ".testdisplay/.testdisplay",
+    ".testdisplay/styles.xml",
+    ".testdisplay/scripts.xml",
+    ".testdisplay/schedule.xml"
+};
 
-const QString settings_path = "python-unit-tests";
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -56,7 +58,7 @@ MainWindow::MainWindow(QWidget *parent)
             this, SLOT(processComplete(int, QProcess::ExitStatus)));
 
     /* Load schedule */
-    QString sched_path = QDir::homePath() + QDir::separator() + settings_path + QDir::separator() + "schedule.xml";
+    QString sched_path = getOptionPath(optionFile::OPTION_SCHEDULE);
 
     sched.watchFile(sched_path);
 
@@ -90,6 +92,10 @@ QSize MainWindow::getTextSize(QString text, QPainter & p) {
     int th = fm.height();
     return QSize(tw, th);
 }
+
+/**
+ * Draw the main test display window.
+ */
 
 void MainWindow::paintMainDisplay()
 {
@@ -200,9 +206,8 @@ void MainWindow::keyPressEvent(QKeyEvent * event)
 
     if (event->key() == Qt::Key_Q) {
         QCoreApplication::quit();
-    } else if (event->key() == Qt::Key_R) {
-        QString script_path = QDir::homePath() + QDir::separator() + settings_path + QDir::separator() + "launch-test.sh";
-
+    } else if (event->key() == Qt::Key_D) {
+        QString script_path = QDir::homePath() + QDir::separator() + ".testdisplay/launch-demo.sh";
         startBgProcess(script_path);
     } else if (event->key() == Qt::Key_M) {
         if (state == displayState::DISPLAY_MAIN) {
@@ -273,8 +278,7 @@ void MainWindow::mytouchEvent(QTouchEvent *event)
         qDebug() << point.pos();
     }
 
-    QString script_path = QDir::homePath() + QDir::separator() + settings_path + QDir::separator() + "launch-test.sh";
-
+    QString script_path = QDir::homePath() + QDir::separator() + ".testdisplay/launch-demo.sh";
     startBgProcess(script_path);
 }
 
@@ -387,6 +391,20 @@ bool MainWindow::stopBgProcess()
     return bResult;
 }
 
+/**
+ * Return the name of the option file based on it's enumerated value.
+ */
+
+QString MainWindow::getOptionPath(optionFile opt)
+{
+    if ((opt >= optionFile::OPTION_SETTINGS) && (opt <= optionFile::OPTION_SCHEDULE)) {
+        QString fullPath = QDir::homePath() + QDir::separator() + optionFilenames.at(static_cast<int>(opt));
+        return fullPath;
+    }
+
+    return QString();
+}
+
 bool MainWindow::loadStyles()
 {
     // Read the styles from XML
@@ -396,7 +414,7 @@ bool MainWindow::loadStyles()
     reader.setContentHandler(&parser);
     reader.setErrorHandler(&parser);
 
-    QFile file(STYLE_XML_PATH);
+    QFile file(getOptionPath(optionFile::OPTION_STYLES));
     if (!file.open(QFile::ReadOnly | QFile::Text)) {
         qWarning() << "Unable to open file!";
         return false;
@@ -411,12 +429,18 @@ bool MainWindow::loadStyles()
     return true;
 }
 
+/**
+ * Load user-invokable scripts from the XML file.
+ *
+ * \returns true on success, false on failure.
+ */
+
 bool MainWindow::loadScripts()
 {
     bool result = false;
     QString xmlFilePath;
 
-    xmlFilePath = QDir::homePath() + "/python-unit-tests/scripts.xml";
+    xmlFilePath = getOptionPath(optionFile::OPTION_SCRIPTS);
     if (scriptMgr.load(xmlFilePath)) {
         qInfo() << "Scripts loaded";
         result = true;
@@ -464,7 +488,6 @@ bool MainWindow::parseText(QString line, QString &response)
         } else if (element[0] == "STAT") {
             response = get_status_string();
         } else if (element[0] == "RUNK") {
-//          qDebug() << "option " << element[1] << " len " << element[1].length();
             if (element[1].length() == 1) {
                 TestScriptPtr script = scriptMgr.getScriptForKey(element[1].front().toLatin1());
                 if (!script.isNull()) {
@@ -528,6 +551,12 @@ QString MainWindow::get_status_string()
 
     return response;
 }
+
+/*!
+ * Return the list of scripts.
+ *
+ * \returns QString containing all script information.
+ */
 
 QString MainWindow::get_script_list()
 {

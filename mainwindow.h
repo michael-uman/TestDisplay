@@ -22,6 +22,13 @@ enum class displayState {
     DISPLAY_TEST,
 };
 
+enum class optionFile {
+    OPTION_SETTINGS,
+    OPTION_STYLES,
+    OPTION_SCRIPTS,
+    OPTION_SCHEDULE,
+};
+
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -67,11 +74,14 @@ protected:
     bool            startBgProcess(QString script_path);
     bool            stopBgProcess();
 
+    QString         getOptionPath(enum optionFile opt);
+
     bool            loadStyles();
     bool            loadScripts();
     QString         get_status_string();
     QString         get_script_list();
     QString         get_style_list();
+
 private:
     bool            bRunning            = false;
     displayState    state               = displayState::DISPLAY_BLANK;
@@ -100,6 +110,8 @@ private:
     TestScriptMgr   scriptMgr;
 
     Scheduler       sched;
+
+    static QStringList     optionFilenames;
 };
 
 #endif // MAINWINDOW_H
