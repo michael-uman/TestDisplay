@@ -44,6 +44,7 @@ public slots:
     void onConnection();
     void onReadReady(QTcpSocket * clientSocket);
     void processComplete(int exitCode, QProcess::ExitStatus exitStatus);
+    void runCommand(QString command);
 
 protected:
     void paintEvent(QPaintEvent * event) override;

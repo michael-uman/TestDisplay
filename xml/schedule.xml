@@ -1,0 +1,20 @@
+<schedule>
+    <event name="simple-test">
+        <datetime>
+            <dow>0101010</dow>              <!-- Mon/Wed/Fri -->
+            <hour>11</hour>
+            <min>30</min>
+        </datetime>
+        <desc>Perform simple test</desc>
+        <command>/home/developer/python-unit-tests/launch-simple-test.sh</command>
+    </event>
+    <event name="clean-test">
+        <datetime>
+            <dow>0010100</dow>              <!-- Tue/Thu -->
+            <hour>11</hour>
+            <min>30</min>
+        </datetime>
+        <desc>Perform clean test</desc>
+        <command>/home/developer/python-unit-tests/launch-clean-test.sh</command>
+    </event>
+</schedule>

@@ -4,6 +4,12 @@
 #include <QObject>
 #include <QVector>
 #include <QTimer>
+#include <QDomDocument>
+#include <QFileSystemWatcher>
+
+/**
+ * Enumeration of day of week.
+ */
 
 enum DOW {
     DOW_SUNDAY      = 1L << 0,
@@ -22,6 +28,10 @@ struct eventTimeStamp {
 };
 
 class Scheduler;
+
+/**
+ * Scheduled Event class.
+ */
 
 class ScheduleEvent : public QObject
 {
@@ -62,8 +72,8 @@ class Scheduler : public QObject
 {
     Q_OBJECT
 public:
-    explicit        Scheduler(QObject *parent = nullptr);
-    virtual         ~Scheduler();
+    explicit                Scheduler(QObject *parent = nullptr);
+    virtual                 ~Scheduler();
 
     bool                    scheduleEvent(QString name, QString desc,
                                           QString cmd, qint32 dow,
@@ -76,24 +86,31 @@ public:
         return events.size();
     }
 
-    bool                    loadSchedule(QString & scheduleName);
+    bool                    loadSchedule(const QString & scheduleName);
     bool                    saveSchedule(QString & scheduleName);
+
+    bool                    watchFile(QString & file);
 
 signals:
     void                    runCommand(QString command);
 
 public slots:
     void                    timeout();
+    void                    fileChanged(const QString & path);
 
 protected:
     QTimer *                timer   = nullptr;
     ScheduleEventVector     events;
+    QFileSystemWatcher      watcher;
 
     bool                    initTimer();
     void                    releaseTimer();
 
 private:
     bool                    isDOWSet(const QDate & date, int dowMask);
+    bool                    parseDateTime(const QDomNode & node,
+                                          int & dowMask,
+                                          int & hour, int & min);
 };
 
 #endif // SCHEDULER_H

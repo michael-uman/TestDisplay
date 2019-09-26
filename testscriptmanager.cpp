@@ -77,9 +77,6 @@ bool TestScriptMgr::load(QString filename)
             while (!scriptChild.isNull()) {
                 tag = scriptChild.toElement().tagName();
 
-#ifdef DEBUG
-                qDebug() << "tag " << tag;
-#endif
                 if (tag.compare("key", Qt::CaseInsensitive) == 0) {
                     scriptKey = scriptChild.toElement().text()[0];
                 } else if (tag.compare("name", Qt::CaseInsensitive) == 0) {

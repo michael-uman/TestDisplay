@@ -18,6 +18,8 @@
 #define STYLE_XML_PATH      "C:/Program Files/TestDisplay/styles.xml"
 #endif
 
+const QString settings_path = "python-unit-tests";
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
@@ -54,11 +56,16 @@ MainWindow::MainWindow(QWidget *parent)
             this, SLOT(processComplete(int, QProcess::ExitStatus)));
 
     /* Load schedule */
-    QString sched_path = QDir::homePath() + QDir::separator() + "python-unit-tests" + QDir::separator() + "schedule.xml";
+    QString sched_path = QDir::homePath() + QDir::separator() + settings_path + QDir::separator() + "schedule.xml";
 
+    sched.watchFile(sched_path);
+
+    qDebug() << "Loading schedule from file...";
     if (!sched.loadSchedule(sched_path)) {
         qWarning() << "Unable to load schedule!";
     }
+
+    connect(&sched, &Scheduler::runCommand, this, &MainWindow::runCommand);
 
     sDateTime = QDateTime::currentDateTime().toString();
 
@@ -194,7 +201,7 @@ void MainWindow::keyPressEvent(QKeyEvent * event)
     if (event->key() == Qt::Key_Q) {
         QCoreApplication::quit();
     } else if (event->key() == Qt::Key_R) {
-        QString script_path = QDir::homePath() + QDir::separator() + "python-unit-tests" + QDir::separator() + "launch-test.sh";
+        QString script_path = QDir::homePath() + QDir::separator() + settings_path + QDir::separator() + "launch-test.sh";
 
         startBgProcess(script_path);
     } else if (event->key() == Qt::Key_M) {
@@ -266,7 +273,7 @@ void MainWindow::mytouchEvent(QTouchEvent *event)
         qDebug() << point.pos();
     }
 
-    QString script_path = QDir::homePath() + QDir::separator() + "python-unit-tests" + QDir::separator() + "launch-test.sh";
+    QString script_path = QDir::homePath() + QDir::separator() + settings_path + QDir::separator() + "launch-test.sh";
 
     startBgProcess(script_path);
 }
@@ -332,7 +339,7 @@ bool MainWindow::startBgProcess(QString script_path)
         sMessage = "Starting script...";
         repaint();
 
-        //QString script_path = QDir::homePath() + QDir::separator() + "python-unit-tests" + QDir::separator() + "launch-test.sh";
+        //QString script_path = QDir::homePath() + QDir::separator() + settings_path + QDir::separator() + "launch-test.sh";
         qInfo() << "Starting script @ " << script_path;
 
         bgProcess.start(script_path);
@@ -641,4 +648,10 @@ void MainWindow::processComplete(int exitCode, QProcess::ExitStatus exitStatus)
     bgProcess.close();
     bgRunning = false;
     runningScriptName.clear();
+}
+
+void MainWindow::runCommand(QString command)
+{
+    startBgProcess(command);
+    return;
 }

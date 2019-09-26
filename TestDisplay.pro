@@ -66,5 +66,7 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target xmlfiles
 
 DISTFILES += \
-    xml/scripts.xml
+    xml/schedule.xml \
+    xml/scripts.xml \
+    xml/styles.xml
 
