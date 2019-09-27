@@ -21,13 +21,51 @@ enum DOW {
     DOW_SATURDAY    = 1L << 6,
 };
 
-struct eventTimeStamp {
-    int         dow     = 0;
-    int         hour    = 0;
-    int         min     = 0;
+class Scheduler;
+class ScheduleEvent;
+
+class hourmin : public QObject {
+    Q_OBJECT
+
+public:
+    hourmin() : QObject(nullptr), hour(0), min(0) {}
+    hourmin(int h, int m) : QObject(nullptr), hour(h), min(m) {}
+    hourmin(const hourmin & copy) : QObject(nullptr), hour(copy.hour), min(copy.min) {}
+
+    hourmin & operator =(const hourmin & copy) {
+        hour = copy.hour;
+        min = copy.min;
+
+        return *this;
+    }
+
+    int hour;
+    int min;
 };
 
-class Scheduler;
+class eventTimeRef  {
+public:
+    explicit eventTimeRef() {}
+    ~eventTimeRef() {}
+
+    void setDays(int dowMask) {
+        dow = dowMask;
+    }
+    void addTime(int hour, int min) {
+        hourmin hm(hour,min);
+        times.append(hm);
+    }
+
+    static bool doEventsConflict(const eventTimeRef & a, const eventTimeRef & b);
+
+protected:
+    friend class ScheduleEvent;
+    friend class Scheduler;
+
+    int         dow     = 0;
+
+    QVector<hourmin>    times;
+};
 
 /**
  * Scheduled Event class.
@@ -37,19 +75,27 @@ class ScheduleEvent : public QObject
 {
     Q_OBJECT
 public:
-    ScheduleEvent();
+    explicit ScheduleEvent();
     ScheduleEvent(QString name, QObject * parent = nullptr);
     ScheduleEvent(const ScheduleEvent & copy);
 
     virtual ~ScheduleEvent();
 
+    bool            valid() const;
+
     void            setName(QString name);
     void            setDescription(QString desc);
     void            setCommand(QString cmd);
+    void            setDOW(int dowMask);
 
-    bool            scheduleEvent(qint32 dow, int hour, int min);
+    bool            scheduleEvent(const hourmin & hm);
+    bool            scheduleEvent(int hour, int min);
+    bool            scheduleEvent(const QString & timestr);
 
     void            dump();
+    static bool     doEventsConflict(const ScheduleEvent & a, const ScheduleEvent & b);
+
+    bool            isEventTime(const QDateTime & ts);
 
 protected:
     friend class Scheduler;
@@ -58,7 +104,7 @@ protected:
     QString         eventDesc;
     QString         eventCommand;
 
-    eventTimeStamp  eventTime;
+    eventTimeRef    eventTime;
 };
 
 
@@ -111,6 +157,8 @@ private:
     bool                    parseDateTime(const QDomNode & node,
                                           int & dowMask,
                                           int & hour, int & min);
+    bool                    parseDateTime(const QDomNode & node, ScheduleEvent & event);
 };
+
 
 #endif // SCHEDULER_H

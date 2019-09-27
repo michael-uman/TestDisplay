@@ -2,6 +2,7 @@
 #include <QDateTime>
 #include <QDomDocument>
 #include <QFile>
+#include <QTime>
 #include "scheduler.h"
 
 const QString dow_string[] = {
@@ -14,9 +15,25 @@ const QString dow_string[] = {
     "Saturday"
 };
 
-extern const QString settings_path;
+bool eventTimeRef::doEventsConflict(const eventTimeRef &a, const eventTimeRef &b)
+{
+    if ((a.dow & b.dow) != 0) {
+        for (const auto & timea : a.times) {
+            for (const auto & timeb : b.times) {
+                if ((timea.hour == timeb.hour) &&
+                    (timea.min == timeb.min))
+                {
+                    return true;
+                }
+            }
+        }
+    }
 
-ScheduleEvent::ScheduleEvent() : QObject(nullptr)
+    return false;
+}
+
+ScheduleEvent::ScheduleEvent()
+    : QObject(nullptr)
 {
 
 }
@@ -39,7 +56,19 @@ ScheduleEvent::ScheduleEvent(const ScheduleEvent &copy)
 
 ScheduleEvent::~ScheduleEvent()
 {
+}
 
+bool ScheduleEvent::valid() const
+{
+    bool bValid = false;
+
+    if (!eventName.isEmpty() && !eventDesc.isEmpty() && !eventCommand.isEmpty()) {
+        if (eventTime.dow != 0) {
+            bValid = true;
+        }
+    }
+
+    return bValid;
 }
 
 void ScheduleEvent::setName(QString name)
@@ -57,12 +86,30 @@ void ScheduleEvent::setCommand(QString cmd)
     eventCommand = cmd;
 }
 
-bool ScheduleEvent::scheduleEvent(qint32 dow, int hour, int min)
+void ScheduleEvent::setDOW(int dowMask)
 {
-    eventTime.dow   = dow;
-    eventTime.hour  = hour;
-    eventTime.min   = min;
+    eventTime.dow = dowMask;
+}
 
+bool ScheduleEvent::scheduleEvent(const hourmin &hm)
+{
+    eventTime.times.append(hm);
+    return true;
+}
+
+bool ScheduleEvent::scheduleEvent(int hour, int min)
+{
+    hourmin schedTime(hour, min);
+    eventTime.times.append(schedTime);
+
+    return true;
+}
+
+bool ScheduleEvent::scheduleEvent(const QString &timestr)
+{
+    QTime       ts(QTime::fromString(timestr, "hh:mmAP"));
+    hourmin     schedTime(ts.hour(), ts.minute());
+    eventTime.times.append(schedTime);
     return true;
 }
 
@@ -81,52 +128,49 @@ void ScheduleEvent::dump()
         }
     }
     qDebug() << "Days : " << days;
-    QString time = QString::asprintf("%02d:%02d", eventTime.hour, eventTime.min);
-    qDebug() << "Time : " << time;
+
+    for (const auto & tr : eventTime.times) {
+        QString time = QString::asprintf("%02d:%02d", tr.hour, tr.min);
+        qDebug() << "Time : " << time;
+    }
+
+    qDebug() << "Vali : " << QString(valid()?"True":"False");
 
     return;
 }
 
-bool Scheduler::isDOWSet(const QDate &date, int dowMask)
+bool ScheduleEvent::doEventsConflict(const ScheduleEvent &a, const ScheduleEvent &b)
 {
-    int dow = date.dayOfWeek();
+    return eventTimeRef::doEventsConflict(a.eventTime, b.eventTime);
+}
+
+bool ScheduleEvent::isEventTime(const QDateTime &ts)
+{
+    int dow  = ts.date().dayOfWeek(); //  date.dayOfWeek();
+    int hour = ts.time().hour();
+    int min  = ts.time().minute();
+    int sec  = ts.time().second();
+
+    if (sec != 0)
+        return false;
 
     if (dow == 7) {
         dow = 0;
     }
 
-    return ((dowMask & (1L << dow)) != 0);
-}
-
-bool Scheduler::parseDateTime(const QDomNode &node, int &dowMask, int &hour, int &min)
-{
-    for (QDomNode n = node ; !n.isNull() ; n = n.nextSibling()) {
-        if (n.nodeType() == QDomNode::ElementNode) {
-            QDomElement elem = n.toElement();
-
-            if (elem.tagName() == "dow") {
-                QString dowString = elem.text();
-                if (dowString.length() == 7) {
-                    for (int i = 0 ; i < 7 ; i++) {
-                        if (dowString[i] == "1") {
-                            dowMask |= (1L << i);
-                        }
-                    }
-                } else {
-                    qWarning() << "Invalid dow field!";
-                }
-            } else if (elem.tagName() == "hour") {
-                hour = elem.text().toInt();
-            } else if (elem.tagName() == "min") {
-                min = elem.text().toInt();
-            } else {
-                qWarning() << "Unknown tag " << elem.tagName();
+    if ((eventTime.dow & (1L << dow)) != 0) {
+        for (const auto & eventTS : eventTime.times) {
+            if ((hour == eventTS.hour) &&
+                (min == eventTS.min))
+            {
+                return true;
             }
         }
     }
 
-    return true;
+    return false;
 }
+
 
 Scheduler::Scheduler(QObject *parent)
     : QObject(parent),
@@ -146,17 +190,22 @@ Scheduler::~Scheduler()
 
 bool Scheduler::scheduleEvent(QString name, QString desc, QString cmd, qint32 dow, int hour, int min)
 {
+    // Check for conflicts
     for (const auto & ev : events) {
-        if (((ev->eventTime.dow & dow) != 0) && (ev->eventTime.hour == hour) && (ev->eventTime.min == min)) {
-            qDebug() << "Event times intersected";
-            return false;
+        if ((ev->eventTime.dow & dow) != 0) {
+            for (const auto & ts : ev->eventTime.times) {
+                if ((ts.hour == hour) && (ts.min == min))
+                    return false;
+            }
         }
     }
 
     ScheduleEvent     *  newEvent = new ScheduleEvent(name);
+
     newEvent->setDescription(desc);
     newEvent->setCommand(cmd);
-    newEvent->scheduleEvent(dow, hour, min);
+    newEvent->setDOW(dow);
+    newEvent->scheduleEvent(hour, min);
 
     events.push_back(newEvent);
 
@@ -165,15 +214,19 @@ bool Scheduler::scheduleEvent(QString name, QString desc, QString cmd, qint32 do
 
 bool Scheduler::scheduleEvent(const ScheduleEvent &event)
 {
+    // Check for conflict
     for (const auto & ev : events) {
-        if (((ev->eventTime.dow & event.eventTime.dow) != 0) &&
-             (ev->eventTime.hour == event.eventTime.hour) &&
-             (ev->eventTime.min == event.eventTime.min))
-        {
-            qDebug() << "Event times intersected";
-            return false;
+        if ((ev->eventTime.dow & event.eventTime.dow) != 0) {
+            for (const auto & ts1 : ev->eventTime.times) {
+                for (const auto & ts2 : event.eventTime.times) {
+                    if ((ts1.hour == ts2.hour) && (ts1.min == ts2.min)) {
+                        return false;
+                    }
+                }
+            }
         }
     }
+
     ScheduleEvent * newEvent = new ScheduleEvent(event);
 
     events.push_back(newEvent);
@@ -181,6 +234,9 @@ bool Scheduler::scheduleEvent(const ScheduleEvent &event)
     return true;
 }
 
+/**
+ * Dump the schedule to debug.
+ */
 void Scheduler::dump()
 {
     qDebug() << "Dump of all events in scheduler:";
@@ -190,13 +246,19 @@ void Scheduler::dump()
     }
 }
 
+/**
+ * Load a schedule from an XML file.
+ */
 bool Scheduler::loadSchedule(const QString &scheduleName)
 {
-    qDebug() << Q_FUNC_INFO;
-    Q_UNUSED(scheduleName)
-
     QDomDocument        doc;
     QFile               xmlFile(scheduleName);
+
+#ifdef DEBUG
+    qDebug() << Q_FUNC_INFO;
+#endif
+
+    qInfo() << "Loading schedule " << scheduleName;
 
     if (!xmlFile.open(QIODevice::ReadOnly)) {
         qWarning() << "Unable to open schedule XML file";
@@ -208,6 +270,9 @@ bool Scheduler::loadSchedule(const QString &scheduleName)
         xmlFile.close();
         return false;
     }
+
+    xmlFile.close();
+
     QDomElement root = doc.documentElement();
 
     if (root.tagName() != "schedule") {
@@ -220,10 +285,10 @@ bool Scheduler::loadSchedule(const QString &scheduleName)
     for (QDomNode n = root.firstChild() ; !n.isNull() ; n = n.nextSibling()) {
         QDomElement domElem = n.toElement();
 
+
         if (domElem.tagName() == "event") {
             QString eventName = domElem.attribute("name");
-            QString eventDesc, eventCommand;
-            int dowMask = 0, hour = 0, min = 0;
+            ScheduleEvent newEvent(eventName);
 
             for (QDomNode s = n.firstChild() ; !s.isNull() ; s = s.nextSibling()) {
                 if (s.nodeType() != QDomNode::ElementNode)
@@ -231,23 +296,23 @@ bool Scheduler::loadSchedule(const QString &scheduleName)
 
                 domElem = s.toElement();
                 if (domElem.tagName() == "datetime") {
-
-                    parseDateTime(domElem.firstChild(), dowMask, hour, min);
-
+                    parseDateTime(domElem.firstChild(), newEvent);
                 } else if (domElem.tagName() == "desc") {
-                    eventDesc = domElem.text();
+                    newEvent.setDescription(domElem.text());
                 } else if (domElem.tagName() == "command") {
-                    eventCommand = domElem.text();
+                    newEvent.setCommand(domElem.text());
                 } else {
                     qWarning() << "Unknown tag " << domElem.tagName();
                 }
             }
 
-            qInfo() << "Adding " << eventName << " desc " << eventDesc << " cmd " << eventCommand;
-
-            scheduleEvent(eventName, eventDesc, eventCommand, dowMask, hour, min);
+            scheduleEvent(newEvent);
         }
     }
+
+#ifdef DEBUG
+    dump();
+#endif
 
     return true;
 }
@@ -261,34 +326,33 @@ bool Scheduler::saveSchedule(QString &scheduleName)
 
 bool Scheduler::watchFile(QString & filename)
 {
+#ifdef DEBUG
     qDebug() << Q_FUNC_INFO << "file" << filename;
-
+#endif
     return watcher.addPath(filename);
 }
 
 void Scheduler::timeout()
 {
     QDateTime   currentDateTime = QDateTime::currentDateTime();
-    QTime       currentTime = currentDateTime.time();
-    QDate       currentDate = currentDateTime.date();
 
     // Run through all events checking if the time has come...
     for (auto & event : events) {
-        if (isDOWSet(currentDate, event->eventTime.dow)) {
-            if ((currentTime.hour() == event->eventTime.hour) &&
-                (currentTime.minute() == event->eventTime.min) &&
-                (currentTime.second() == 0))
-            {
-                qInfo() << "Event " << event->eventName << " has occured";
-                emit runCommand(event->eventCommand);
-            }
+        if (event->isEventTime(currentDateTime)) {
+            qInfo() << "Event " << event->eventName << " has occured";
+            emit runCommand(event->eventCommand);
         }
     }
 }
 
+/**
+ * When the schedule file is changed, reload the schedule xml.
+ */
 void Scheduler::fileChanged(const QString &path)
 {
+#ifdef DEBUG
     qDebug() << Q_FUNC_INFO << " path " << path;
+#endif
     loadSchedule(path);
     return;
 }
@@ -318,3 +382,69 @@ void Scheduler::releaseTimer()
     qInfo() << "Timer stopped";
 }
 
+bool Scheduler::isDOWSet(const QDate &date, int dowMask)
+{
+    int dow = date.dayOfWeek();
+
+    if (dow == 7) {
+        dow = 0;
+    }
+
+    return ((dowMask & (1L << dow)) != 0);
+}
+
+bool Scheduler::parseDateTime(const QDomNode &node, ScheduleEvent & event) {
+    for (QDomNode n = node ; !n.isNull() ; n = n.nextSibling()) {
+        if (n.nodeType() == QDomNode::ElementNode) {
+            QDomElement elem = n.toElement();
+
+            if (elem.tagName() == "dow") {
+                QString dowString = elem.text();
+                if (dowString.length() == 7) {
+                    for (int i = 0 ; i < 7 ; i++) {
+                        if (dowString[i] == "1") {
+                            event.eventTime.dow |= (1L << i);
+                        }
+                    }
+                } else {
+                    qWarning() << "Invalid dow field!";
+                }
+            } else if (elem.tagName() == "time") {
+                event.scheduleEvent(elem.text());
+            } else {
+                qWarning() << "Unknown tag " << elem.tagName();
+            }
+        }
+    }
+
+    return true;
+}
+bool Scheduler::parseDateTime(const QDomNode &node, int &dowMask, int &hour, int &min)
+{
+    for (QDomNode n = node ; !n.isNull() ; n = n.nextSibling()) {
+        if (n.nodeType() == QDomNode::ElementNode) {
+            QDomElement elem = n.toElement();
+
+            if (elem.tagName() == "dow") {
+                QString dowString = elem.text();
+                if (dowString.length() == 7) {
+                    for (int i = 0 ; i < 7 ; i++) {
+                        if (dowString[i] == "1") {
+                            dowMask |= (1L << i);
+                        }
+                    }
+                } else {
+                    qWarning() << "Invalid dow field!";
+                }
+            } else if (elem.tagName() == "hour") {
+                hour = elem.text().toInt();
+            } else if (elem.tagName() == "min") {
+                min = elem.text().toInt();
+            } else {
+                qWarning() << "Unknown tag " << elem.tagName();
+            }
+        }
+    }
+
+    return true;
+}
