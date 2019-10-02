@@ -26,6 +26,7 @@ SOURCES += \
     mainwindow.cpp \
     runguard.cpp \
     scheduler.cpp \
+    testdisplayrequesthandler.cpp \
     testscriptmanager.cpp
 
 HEADERS += \
@@ -36,6 +37,7 @@ HEADERS += \
     runguard.h \
     scheduler.h \
     testdisplay_defaults.h \
+    testdisplayrequesthandler.h \
     testscriptmanager.h
 
 unix {
@@ -69,4 +71,8 @@ DISTFILES += \
     xml/schedule.xml \
     xml/scripts.xml \
     xml/styles.xml
+
+# include(../QtWebApp/QtWebApp/logging/logging.pri)
+include(../QtWebApp/QtWebApp/httpserver/httpserver.pri)
+include(../QtWebApp/QtWebApp/templateengine/templateengine.pri)
 

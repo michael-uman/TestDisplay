@@ -5,16 +5,6 @@
 #include <QTime>
 #include "scheduler.h"
 
-const QString dow_string[] = {
-    "Sunday",
-    "Monday",
-    "Tuesday",
-    "Wednesday",
-    "Thursday",
-    "Friday",
-    "Saturday"
-};
-
 bool eventTimeRef::doEventsConflict(const eventTimeRef &a, const eventTimeRef &b)
 {
     if ((a.dow & b.dow) != 0) {
@@ -32,17 +22,13 @@ bool eventTimeRef::doEventsConflict(const eventTimeRef &a, const eventTimeRef &b
     return false;
 }
 
-ScheduleEvent::ScheduleEvent()
-    : QObject(nullptr)
-{
-
-}
-
 ScheduleEvent::ScheduleEvent(QString name, QObject * parent)
     : QObject(parent),
       eventName(name)
 {
-
+#ifdef DEBUG_SCHEDULER
+    qDebug() << Q_FUNC_INFO;
+#endif
 }
 
 ScheduleEvent::ScheduleEvent(const ScheduleEvent &copy)
@@ -52,10 +38,16 @@ ScheduleEvent::ScheduleEvent(const ScheduleEvent &copy)
       eventCommand(copy.eventCommand),
       eventTime(copy.eventTime)
 {
+#ifdef DEBUG_SCHEDULER
+    qDebug() << Q_FUNC_INFO;
+#endif
 }
 
 ScheduleEvent::~ScheduleEvent()
 {
+#ifdef DEBUG_SCHEDULER
+    qDebug() << Q_FUNC_INFO;
+#endif
 }
 
 bool ScheduleEvent::valid() const
@@ -115,6 +107,16 @@ bool ScheduleEvent::scheduleEvent(const QString &timestr)
 
 void ScheduleEvent::dump()
 {
+    static const QString dow_string[] = {
+        "Sunday",
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday"
+    };
+
     qDebug() << "Name : " << eventName;
     qDebug() << "Desc : " << eventDesc;
     qDebug() << "Cmd  : " << eventCommand;
@@ -188,7 +190,9 @@ Scheduler::~Scheduler()
     releaseTimer();
 }
 
-bool Scheduler::scheduleEvent(QString name, QString desc, QString cmd, qint32 dow, int hour, int min)
+bool Scheduler::scheduleEvent(QString name, QString desc,
+                              QString cmd, qint32 dow,
+                              int hour, int min)
 {
     // Check for conflicts
     for (const auto & ev : events) {
@@ -200,7 +204,7 @@ bool Scheduler::scheduleEvent(QString name, QString desc, QString cmd, qint32 do
         }
     }
 
-    ScheduleEvent     *  newEvent = new ScheduleEvent(name);
+    ScheduleEventPtr  newEvent = ScheduleEventPtr(new ScheduleEvent(name));
 
     newEvent->setDescription(desc);
     newEvent->setCommand(cmd);
@@ -227,10 +231,8 @@ bool Scheduler::scheduleEvent(const ScheduleEvent &event)
         }
     }
 
-    ScheduleEvent * newEvent = new ScheduleEvent(event);
-
+    ScheduleEventPtr newEvent = ScheduleEventPtr(new ScheduleEvent(event));
     events.push_back(newEvent);
-
     return true;
 }
 

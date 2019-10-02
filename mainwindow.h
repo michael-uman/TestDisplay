@@ -13,6 +13,11 @@
 #include "displaystyle.h"
 #include "testscriptmanager.h"
 #include "scheduler.h"
+#include "httplistener.h"
+
+
+using HttpListener          = stefanfrings::HttpListener;
+using HttpRequestHandler    = stefanfrings::HttpRequestHandler;
 
 enum class displayState {
     DISPLAY_BLANK,
@@ -28,6 +33,9 @@ enum class optionFile {
     OPTION_SCRIPTS,
     OPTION_SCHEDULE,
 };
+
+// forward declaration
+class TestDisplayRequestHandler;
 
 class MainWindow : public QMainWindow
 {
@@ -52,8 +60,11 @@ public slots:
     void onReadReady(QTcpSocket * clientSocket);
     void processComplete(int exitCode, QProcess::ExitStatus exitStatus);
     void runCommand(QString command);
+    void stopCommand();
 
 protected:
+    friend class TestDisplayRequestHandler;
+
     void paintEvent(QPaintEvent * event) override;
     void keyPressEvent(QKeyEvent * event) override;
     void closeEvent(QCloseEvent * event) override;
@@ -85,6 +96,7 @@ protected:
 private:
     bool            bRunning            = false;
     displayState    state               = displayState::DISPLAY_BLANK;
+    QMutex          mainMutex;
 
     QTimer          updateTimer;
     QTcpServer *    tcpServer           = nullptr;
@@ -110,6 +122,10 @@ private:
     TestScriptMgr   scriptMgr;
 
     Scheduler       sched;
+
+    QSettings *     appSettings         = nullptr;
+    HttpListener *  httpListener        = nullptr;
+    HttpRequestHandler * reqHandler     = nullptr;
 
     static QStringList     optionFilenames;
 };

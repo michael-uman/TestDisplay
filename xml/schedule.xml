@@ -1,29 +1,34 @@
 <schedule>
     <event name="simple-test">
         <datetime>
-            <dow>0111110</dow>              <!-- Mon/Wed/Fri -->
-            <time>11:30AM</time>
+            <dow>0111110</dow>
+            <time>11:00AM</time>
+            <time>11:30PM</time>
             <time>12:00PM</time>
         </datetime>
         <desc>Perform simple test</desc>
         <command>/home/developer/python-unit-tests/launch-simple-test.sh</command>
     </event>
+
     <event name="clean-test">
         <datetime>
-            <dow>0111110</dow>              <!-- Tue/Thu -->
-            <time>11:40AM</time>
-            <time>12:10PM</time>
+            <dow>0111110</dow>
+            <time>11:15AM</time>
+            <time>11:45PM</time>
+            <time>12:15PM</time>
         </datetime>
         <desc>Perform clean test</desc>
         <command>/home/developer/python-unit-tests/launch-clean-test.sh</command>
     </event>
+<!--
     <event name="run-demo">
         <datetime>
-            <dow>0000100</dow>              <!-- Tue/Thu -->
+            <dow>0000100</dow>
             <time>04:40PM</time>
             <time>12:10PM</time>
         </datetime>
         <desc>Perform clean test</desc>
         <command>/home/developer/python-unit-tests/launch-demo.sh</command>
     </event>
+-->
 </schedule>

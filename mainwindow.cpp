@@ -13,6 +13,7 @@
 #include "mainwindow.h"
 #include "displayxmlparser.h"
 #include "processmanager.h"
+#include "testdisplayrequesthandler.h"
 
 QStringList MainWindow::optionFilenames = {
     ".testdisplay/.testdisplay",
@@ -21,9 +22,9 @@ QStringList MainWindow::optionFilenames = {
     ".testdisplay/schedule.xml"
 };
 
-
 MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent)
+    : QMainWindow(parent),
+      mainMutex(QMutex::Recursive)
 {
     appPid = QCoreApplication::applicationPid();
     qDebug() << "Application process id = " << appPid;
@@ -79,6 +80,13 @@ MainWindow::MainWindow(QWidget *parent)
     updateTimer.setInterval(250);
     connect(&updateTimer, &QTimer::timeout, this, &MainWindow::onTimer);
     updateTimer.start();
+
+    // Start HTTP Server...
+    appSettings = new QSettings("wunderbar", "testdisplay");
+    appSettings->beginGroup("listener");
+    qDebug() << "Settings file @ " << appSettings->fileName();
+    reqHandler = new TestDisplayRequestHandler(this);
+    httpListener = new stefanfrings::HttpListener(appSettings, reqHandler);
 }
 
 MainWindow::~MainWindow()
@@ -407,6 +415,8 @@ QString MainWindow::getOptionPath(optionFile opt)
 
 bool MainWindow::loadStyles()
 {
+    QMutexLocker    locker(&mainMutex);
+
     // Read the styles from XML
     DisplayXmlParser parser(styleVec);
     QXmlSimpleReader reader;
@@ -437,8 +447,9 @@ bool MainWindow::loadStyles()
 
 bool MainWindow::loadScripts()
 {
-    bool result = false;
-    QString xmlFilePath;
+    QMutexLocker    locker(&mainMutex);
+    bool            result = false;
+    QString         xmlFilePath;
 
     xmlFilePath = getOptionPath(optionFile::OPTION_SCRIPTS);
     if (scriptMgr.load(xmlFilePath)) {
@@ -537,6 +548,7 @@ bool MainWindow::parseText(QString line, QString &response)
 
 QString MainWindow::get_status_string()
 {
+    QMutexLocker locker(&mainMutex);
     QString response;
 
     response = QString("STAT:");
@@ -560,8 +572,10 @@ QString MainWindow::get_status_string()
 
 QString MainWindow::get_script_list()
 {
-    QString result;
-    QTextStream stream(&result);
+    QMutexLocker    locker(&mainMutex);
+    QString         result;
+    QTextStream     stream(&result);
+
     if (scriptMgr.size() > 0) {
         for (const auto & script : scriptMgr.getVec()) {
             stream <<  script->key() << ":" << script->name() << ":" << script->path() << endl;
@@ -576,8 +590,10 @@ QString MainWindow::get_script_list()
 
 QString MainWindow::get_style_list()
 {
-    QString result;
-    QTextStream stream(&result);
+    QMutexLocker    locker(&mainMutex);
+    QString         result;
+    QTextStream     stream(&result);
+
     if (scriptMgr.size() > 0) {
         for (const auto & style : styleVec) {
             stream <<  style->GetLabel() << ":" <<
@@ -595,16 +611,19 @@ QString MainWindow::get_style_list()
 }
 
 void MainWindow::enableDateTime(bool enabled) {
+    QMutexLocker    locker(&mainMutex);
     bTimeEnabled = enabled;
 }
 
 void MainWindow::setHeading(const QString & heading) {
+    QMutexLocker    locker(&mainMutex);
     qInfo() << "Set Heading : " << heading;
     sHeading = heading;
     repaint();
 }
 
 void MainWindow::setMessage(const QString & message) {
+    QMutexLocker    locker(&mainMutex);
     qInfo() << "Set Message : " << message;
     sMessage = message;
     repaint();
@@ -682,5 +701,11 @@ void MainWindow::processComplete(int exitCode, QProcess::ExitStatus exitStatus)
 void MainWindow::runCommand(QString command)
 {
     startBgProcess(command);
+    return;
+}
+
+void MainWindow::stopCommand()
+{
+    stopBgProcess();
     return;
 }

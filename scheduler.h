@@ -1,11 +1,13 @@
 #ifndef SCHEDULER_H
 #define SCHEDULER_H
 
+#include <QDebug>
 #include <QObject>
 #include <QVector>
 #include <QTimer>
 #include <QDomDocument>
 #include <QFileSystemWatcher>
+#include <QSharedPointer>
 
 /**
  * Enumeration of day of week.
@@ -75,7 +77,6 @@ class ScheduleEvent : public QObject
 {
     Q_OBJECT
 public:
-    explicit ScheduleEvent();
     ScheduleEvent(QString name, QObject * parent = nullptr);
     ScheduleEvent(const ScheduleEvent & copy);
 
@@ -107,8 +108,8 @@ protected:
     eventTimeRef    eventTime;
 };
 
-
-using ScheduleEventVector = QVector<ScheduleEvent *>;
+using ScheduleEventPtr    = QSharedPointer<ScheduleEvent>;
+using ScheduleEventVector = QVector<ScheduleEventPtr>;
 
 /**
  * @brief The Scheduler class
