@@ -24,6 +24,10 @@ public:
     ~TestDisplayRequestHandler();
 
     void service(HttpRequest & request, HttpResponse & response);
+
+protected:
+    QString getHead();
+    QString getToolbar();
 };
 
 #endif // TESTDISPLAYREQUESTHANDLER_H
