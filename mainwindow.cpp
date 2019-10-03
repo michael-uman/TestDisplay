@@ -141,10 +141,10 @@ void MainWindow::paintMainDisplay()
     p.setFont(QFont("Bitstream Vera Sans Mono", 12));
     p.drawText(64, sh - 24, "'Q' => EXIT / 'S' => STOP");
 
-    sText = "© 2019-2020 Wunder-Bar, Inc.";
+    sText = QString("v%1.%2.%3 © 2019-2020 Wunder-Bar, Inc.").arg(VERSION_MAJOR).arg(VERSION_MINOR).arg(VERSION_BUILD);
     txtSize = getTextSize(sText, p);
 
-    p.drawText(sw - 64 - txtSize.width(), sh - 24, sText);
+    p.drawText(sw - 70 - txtSize.width(), sh - 24, sText);
 }
 
 void MainWindow::paintMenuDisplay()
@@ -530,6 +530,15 @@ bool MainWindow::parseText(QString line, QString &response)
         } else if (element[0] == "KILL") {
             QKeyEvent quitEvent(QEvent::KeyPress, 'Q', Qt::NoModifier);
             QCoreApplication::sendEvent(this, &quitEvent);
+        } else if (element[0] == "SCHED") {
+            if (element[1] == "0") {
+                sched.enable(false);
+            } else if (element[1] == "1") {
+                sched.enable(true);
+            } else {
+                qWarning() << "Invalid SCHED value " << element[1];
+                response = "FAIL";
+            }
         } else {
             qDebug() << "Unknown tag " << element[0];
             response = "FAIL";
@@ -557,7 +566,8 @@ QString MainWindow::get_status_string()
 #endif
     response += sHeading + ":" + sMessage + ":";
     response += style->GetLabel() + ":";
-    response += QString((bTimeEnabled == true)?"1":"0") +":";
+    response += QString((bTimeEnabled == true)?"1":"0") + ":";
+    response += QString((sched.isEnabled() == true)?"1":"0") + ":";
     response += QString((bgRunning == true)?"1":"0") + ":";
     response += runningScriptName;
 

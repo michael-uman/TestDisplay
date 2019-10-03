@@ -19,11 +19,16 @@ CONFIG(debug, debug|release) {
     DEFINES += DEBUG
 }
 
+DEFINES += "VERSION_MAJOR=1"
+DEFINES += "VERSION_MINOR=1"
+DEFINES += "VERSION_BUILD=2"
+
 SOURCES += \
     displaystyle.cpp \
     displayxmlparser.cpp \
     main.cpp \
     mainwindow.cpp \
+    rpi_utils.cpp \
     runguard.cpp \
     scheduler.cpp \
     testdisplayrequesthandler.cpp \
@@ -34,6 +39,7 @@ HEADERS += \
     displayxmlparser.h \
     mainwindow.h \
     processmanager.h \
+    rpi_utils.h \
     runguard.h \
     scheduler.h \
     testdisplay_defaults.h \

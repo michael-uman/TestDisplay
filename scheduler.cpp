@@ -334,6 +334,17 @@ bool Scheduler::watchFile(QString & filename)
     return watcher.addPath(filename);
 }
 
+void Scheduler::enable(bool enabled)
+{
+    bSchedulerEnabled = enabled;
+    qInfo() << "Scheduler " << QString((enabled)?"Enabled":"Disabled");
+}
+
+bool Scheduler::isEnabled() const
+{
+    return bSchedulerEnabled;
+}
+
 void Scheduler::timeout()
 {
     QDateTime   currentDateTime = QDateTime::currentDateTime();
@@ -341,8 +352,12 @@ void Scheduler::timeout()
     // Run through all events checking if the time has come...
     for (auto & event : events) {
         if (event->isEventTime(currentDateTime)) {
-            qInfo() << "Event " << event->eventName << " has occured";
-            emit runCommand(event->eventCommand);
+            if (bSchedulerEnabled) {
+                qInfo() << "Event " << event->eventName << " has occured";
+                emit runCommand(event->eventCommand);
+            } else {
+                qInfo() << "Skipping scheduled event " << event->eventName;
+            }
         }
     }
 }

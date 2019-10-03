@@ -32,7 +32,9 @@ void debugOut(QtMsgType type, const QMessageLogContext &context,
     }
     full_msg += "\n";
 
+#ifdef DEBUG
     fprintf(stderr, "%s", full_msg.toLocal8Bit().constData());
+#endif
 
     QFile logfile("logfile.txt");
     if (logfile.open(QFile::WriteOnly|QFile::Append)) {

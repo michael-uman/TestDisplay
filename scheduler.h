@@ -138,6 +138,9 @@ public:
 
     bool                    watchFile(QString & file);
 
+    void                    enable(bool enabled);
+    bool                    isEnabled() const;
+
 signals:
     void                    runCommand(QString command);
 
@@ -149,6 +152,7 @@ protected:
     QTimer *                timer   = nullptr;
     ScheduleEventVector     events;
     QFileSystemWatcher      watcher;
+    QAtomicInteger<bool>    bSchedulerEnabled = true;
 
     bool                    initTimer();
     void                    releaseTimer();

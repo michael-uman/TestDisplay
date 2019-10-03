@@ -20,15 +20,4 @@
         <desc>Perform clean test</desc>
         <command>/home/developer/python-unit-tests/launch-clean-test.sh</command>
     </event>
-<!--
-    <event name="run-demo">
-        <datetime>
-            <dow>0000100</dow>
-            <time>04:40PM</time>
-            <time>12:10PM</time>
-        </datetime>
-        <desc>Perform clean test</desc>
-        <command>/home/developer/python-unit-tests/launch-demo.sh</command>
-    </event>
--->
 </schedule>

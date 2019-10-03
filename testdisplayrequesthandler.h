@@ -26,6 +26,12 @@ public:
     void service(HttpRequest & request, HttpResponse & response);
 
 protected:
+
+    bool handleIndex(HttpResponse &response);
+    bool handleStartScript(HttpResponse &response);
+    bool handleStatusPage(HttpResponse &response);
+    bool handleSysInfo(HttpResponse &response);
+
     QString getHead();
     QString getToolbar();
 };
