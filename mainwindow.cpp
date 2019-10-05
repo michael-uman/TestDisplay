@@ -14,6 +14,7 @@
 #include "displayxmlparser.h"
 #include "processmanager.h"
 #include "testdisplayrequesthandler.h"
+#include "databaselogger.h"
 
 QStringList MainWindow::optionFilenames = {
     ".testdisplay/.testdisplay",
@@ -24,7 +25,8 @@ QStringList MainWindow::optionFilenames = {
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent),
-      mainMutex(QMutex::Recursive)
+      mainMutex(QMutex::Recursive),
+      dblog(this)
 {
     appPid = QCoreApplication::applicationPid();
     qDebug() << "Application process id = " << appPid;
@@ -81,6 +83,12 @@ MainWindow::MainWindow(QWidget *parent)
     connect(&updateTimer, &QTimer::timeout, this, &MainWindow::onTimer);
     updateTimer.start();
 
+    if (dblog.open()) {
+        connect(this, &MainWindow::logMessage, &dblog, &DatabaseLogger::handleLog);
+    } else {
+        qWarning() << "Unable to open database for logging";
+    }
+
     // Start HTTP Server...
     appSettings = new QSettings("wunderbar", "testdisplay");
     appSettings->beginGroup("listener");
@@ -91,7 +99,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow()
 {
-//    delete ui;
+    dblog.close();
 }
 
 QSize MainWindow::getTextSize(QString text, QPainter & p) {
@@ -358,6 +366,7 @@ bool MainWindow::startBgProcess(QString script_path)
         if (bgProcess.waitForStarted()) {
             qInfo() << "Process Id : " << bgProcess.processId();
             runningScriptName = script_path;
+            emit logMessage("START", script_path);
             bgRunning = bResult = true;
         }
     } else {
@@ -705,6 +714,7 @@ void MainWindow::processComplete(int exitCode, QProcess::ExitStatus exitStatus)
 
     bgProcess.close();
     bgRunning = false;
+    emit logMessage("STOP", runningScriptName);
     runningScriptName.clear();
 }
 

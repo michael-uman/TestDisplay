@@ -14,7 +14,7 @@
 #include "testscriptmanager.h"
 #include "scheduler.h"
 #include "httplistener.h"
-
+#include "databaselogger.h"
 
 using HttpListener          = stefanfrings::HttpListener;
 using HttpRequestHandler    = stefanfrings::HttpRequestHandler;
@@ -61,6 +61,9 @@ public slots:
     void processComplete(int exitCode, QProcess::ExitStatus exitStatus);
     void runCommand(QString command);
     void stopCommand();
+
+signals:
+    void logMessage(QString type, QString payload);
 
 protected:
     friend class TestDisplayRequestHandler;
@@ -126,6 +129,8 @@ private:
     QSettings *     appSettings         = nullptr;
     HttpListener *  httpListener        = nullptr;
     HttpRequestHandler * reqHandler     = nullptr;
+
+    DatabaseLogger  dblog;
 
     static QStringList     optionFilenames;
 };

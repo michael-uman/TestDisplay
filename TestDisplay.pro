@@ -1,4 +1,4 @@
-QT       += core gui network xml
+QT       += core gui network xml sql
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -20,10 +20,11 @@ CONFIG(debug, debug|release) {
 }
 
 DEFINES += "VERSION_MAJOR=1"
-DEFINES += "VERSION_MINOR=1"
-DEFINES += "VERSION_BUILD=2"
+DEFINES += "VERSION_MINOR=2"
+DEFINES += "VERSION_BUILD=1"
 
 SOURCES += \
+    databaselogger.cpp \
     displaystyle.cpp \
     displayxmlparser.cpp \
     main.cpp \
@@ -35,6 +36,7 @@ SOURCES += \
     testscriptmanager.cpp
 
 HEADERS += \
+    databaselogger.h \
     displaystyle.h \
     displayxmlparser.h \
     mainwindow.h \
