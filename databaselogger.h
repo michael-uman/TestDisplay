@@ -8,6 +8,8 @@
 #include <QDebug>
 #include <QDateTime>
 
+//#define DEBUG_DB
+
 class DatabaseLogger : public QObject
 {
     Q_OBJECT

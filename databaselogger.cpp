@@ -30,7 +30,9 @@ bool DatabaseLogger::open()
         db.setPassword(PSQL_PASSWD);
 
         if (db.open()) {
+#ifdef DEBUG_DB
             qDebug() << "Database open";
+#endif
             result = true;
         }
     }
@@ -42,7 +44,9 @@ void DatabaseLogger::close()
 {
     if (db.isOpen()) {
         db.close();
+#ifdef DEBUG_DB
         qDebug() << "database closed";
+#endif
     }
 }
 
@@ -50,13 +54,15 @@ void DatabaseLogger::handleLog(QString type, QString payload)
 {
     QSqlQuery q(db);
 
+#ifdef DEBUG_DB
     qDebug() << Q_FUNC_INFO << type << payload;
+#endif
 
     q.prepare("INSERT INTO event (event_type, event_payload) VALUES (?, ?)");
     q.bindValue(0, type);
     q.bindValue(1, payload);
 
     if (!q.exec()) {
-        qDebug() << "Error adding event" << q.lastError();
+        qWarning() << "Error adding event" << q.lastError();
     }
 }

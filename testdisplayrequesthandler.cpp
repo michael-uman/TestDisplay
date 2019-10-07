@@ -138,10 +138,10 @@ bool TestDisplayRequestHandler::handleSysInfo(HttpResponse &response)
     QString localhostname =  QHostInfo::localHostName();
     QString localhostIP;
     QList<QHostAddress> hostList = QHostInfo::fromName(localhostname).addresses();
-    qDebug() << "Found " << hostList.size() << " addresses";
+//    qDebug() << "Found " << hostList.size() << " addresses";
 
     foreach (const QHostAddress& address, hostList) {
-        qDebug() << address;
+//        qDebug() << address;
         if (address.protocol() == QAbstractSocket::IPv4Protocol && address.isLoopback() == false) {
              localhostIP = address.toString();
         }
