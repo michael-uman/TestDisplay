@@ -6,6 +6,7 @@
 #include <QCoreApplication>
 #include <QDir>
 #include <QHostInfo>
+#include <QSharedPointer>
 #ifdef __linux__
     #include <signal.h>
     #include <sys/types.h>
@@ -26,6 +27,7 @@ QStringList MainWindow::optionFilenames = {
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent),
       mainMutex(QMutex::Recursive),
+      appSettings(new QSettings()),
       dblog(this)
 {
     appPid = QCoreApplication::applicationPid();
@@ -90,11 +92,11 @@ MainWindow::MainWindow(QWidget *parent)
     }
 
     // Start HTTP Server...
-    appSettings = new QSettings("wunderbar", "testdisplay");
     appSettings->beginGroup("listener");
     qDebug() << "Settings file @ " << appSettings->fileName();
     reqHandler = new TestDisplayRequestHandler(this);
-    httpListener = new stefanfrings::HttpListener(appSettings, reqHandler);
+    httpListener = new stefanfrings::HttpListener(appSettings.data(), reqHandler);
+    appSettings->endGroup();
 }
 
 MainWindow::~MainWindow()
@@ -368,6 +370,11 @@ bool MainWindow::startBgProcess(QString script_path)
             runningScriptName = script_path;
             emit logMessage("START", script_path);
             bgRunning = bResult = true;
+        } else {
+            qWarning() << "Script failed to start";
+            runningScriptName.clear();
+            sMessage = "Script failed to start!";
+            bgRunning = bResult = false;
         }
     } else {
         qWarning() << "Process " << bgProcess.processId() << " already running...";

@@ -44,19 +44,22 @@ void debugOut(QtMsgType type, const QMessageLogContext &context,
 
 int main(int argc, char *argv[])
 {
-    qInstallMessageHandler(debugOut);
-
     RunGuard guard( "wunderbar.com" );
     if ( !guard.tryToRun() ) {
         printf("Another instance is already running...\n");
         return 0;
     }
 
+    qInstallMessageHandler(debugOut);
+
     QApplication a(argc, argv);
     QCursor cursor(Qt::BlankCursor);
     QApplication::setOverrideCursor(cursor);
     QApplication::changeOverrideCursor(cursor);
 
+    a.setApplicationName("TestDisplay");
+    a.setOrganizationName("wunderbar");
+    a.setOrganizationDomain("wunderbar.com");
     MainWindow w;
     w.show();
     return a.exec();

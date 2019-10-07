@@ -8,6 +8,7 @@
 #include <QTouchDevice>
 #include <QTouchEvent>
 #include <QProcess>
+#include <QSharedPointer>
 
 #include "testdisplay_defaults.h"
 #include "displaystyle.h"
@@ -18,6 +19,7 @@
 
 using HttpListener          = stefanfrings::HttpListener;
 using HttpRequestHandler    = stefanfrings::HttpRequestHandler;
+using QSettingsPtr          = QSharedPointer<QSettings>;
 
 enum class displayState {
     DISPLAY_BLANK,
@@ -126,7 +128,7 @@ private:
 
     Scheduler       sched;
 
-    QSettings *     appSettings         = nullptr;
+    QSettingsPtr    appSettings;
     HttpListener *  httpListener        = nullptr;
     HttpRequestHandler * reqHandler     = nullptr;
 
