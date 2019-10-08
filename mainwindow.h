@@ -30,7 +30,6 @@ enum class displayState {
 };
 
 enum class optionFile {
-    OPTION_SETTINGS,
     OPTION_STYLES,
     OPTION_SCRIPTS,
     OPTION_SCHEDULE,
@@ -126,15 +125,16 @@ private:
 
     TestScriptMgr   scriptMgr;
 
-    Scheduler       sched;
+    Scheduler               sched;
 
-    QSettingsPtr    appSettings;
-    HttpListener *  httpListener        = nullptr;
-    HttpRequestHandler * reqHandler     = nullptr;
+    QSettingsPtr            appSettings;
+    HttpListener *          httpListener   = nullptr;
+    HttpRequestHandler *    reqHandler     = nullptr;
 
-    DatabaseLogger  dblog;
+    DatabaseLogger          dblog;
+    int                     lastLogID;
 
-    static QStringList     optionFilenames;
+    static QStringList      optionFilenames;
 };
 
 #endif // MAINWINDOW_H

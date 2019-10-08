@@ -18,7 +18,6 @@
 #include "databaselogger.h"
 
 QStringList MainWindow::optionFilenames = {
-    ".testdisplay/.testdisplay",
     ".testdisplay/styles.xml",
     ".testdisplay/scripts.xml",
     ".testdisplay/schedule.xml"
@@ -33,16 +32,16 @@ MainWindow::MainWindow(QWidget *parent)
     appPid = QCoreApplication::applicationPid();
     qDebug() << "Application process id = " << appPid;
 
+#ifdef DEBUG
+    QSize WinSize = size();
+    qDebug() << "Window Size = " << WinSize;
+#endif
+
     if (!StartServer()) {
         qDebug() << "Exiting application...";
         close();
         return;
     }
-
-#ifdef DEBUG
-    QSize WinSize = size();
-    qDebug() << "Window Size = " << WinSize;
-#endif
 
     setAttribute(Qt::WA_AcceptTouchEvents);
     QMainWindow::showFullScreen();
@@ -73,6 +72,10 @@ MainWindow::MainWindow(QWidget *parent)
     }
 
     connect(&sched, &Scheduler::runCommand, this, &MainWindow::runCommand);
+
+    appSettings->beginGroup("settings");
+    sched.enable(appSettings->value("scheduler", QVariant::fromValue(false)).toBool());
+    appSettings->endGroup();
 
     sDateTime = QDateTime::currentDateTime().toString();
 
@@ -223,7 +226,7 @@ void MainWindow::keyPressEvent(QKeyEvent * event)
 #endif
 
     if (event->key() == Qt::Key_Q) {
-        QCoreApplication::quit();
+        close();
     } else if (event->key() == Qt::Key_D) {
         QString script_path = QDir::homePath() + QDir::separator() + ".testdisplay/launch-demo.sh";
         startBgProcess(script_path);
@@ -259,6 +262,11 @@ void MainWindow::closeEvent(QCloseEvent *)
 #ifdef DEBUG
     qDebug() << Q_FUNC_INFO;
 #endif
+
+    appSettings->beginGroup("settings");
+    appSettings->setValue("scheduler", sched.isEnabled());
+    appSettings->endGroup();
+
     StopServer();
     updateTimer.stop();
 }
@@ -421,7 +429,7 @@ bool MainWindow::stopBgProcess()
 
 QString MainWindow::getOptionPath(optionFile opt)
 {
-    if ((opt >= optionFile::OPTION_SETTINGS) && (opt <= optionFile::OPTION_SCHEDULE)) {
+    if ((opt >= optionFile::OPTION_STYLES) && (opt <= optionFile::OPTION_SCHEDULE)) {
         QString fullPath = QDir::homePath() + QDir::separator() + optionFilenames.at(static_cast<int>(opt));
         return fullPath;
     }

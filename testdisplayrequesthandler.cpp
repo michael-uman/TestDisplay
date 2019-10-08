@@ -122,6 +122,11 @@ bool TestDisplayRequestHandler::handleStatusPage(HttpResponse &response)
         sResponseText += "<tr><td>" + script->key() + "</td><td>" + script->name() + "</td><td>" + script->path() + "</td></tr>";
     }
     sResponseText += "</table>";
+    sResponseText += "<br>";
+    if (pParent->dblog.isOpen()) {
+        sResponseText += "<h3>Recent Activity</h3>";
+        sResponseText += pParent->dblog.getRecentTable();
+    }
     sResponseText += "</body></html>";
 
     response.write(sResponseText.toUtf8());

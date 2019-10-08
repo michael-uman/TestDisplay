@@ -68,8 +68,7 @@ win32 {
 FORMS +=
 
 xmlfiles.path = /opt/$${TARGET}/bin
-xmlfiles.files += xml/styles.xml
-
+xmlfiles.files += xml/styles.xml xml/schedule.xml xml/scripts.xml
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin

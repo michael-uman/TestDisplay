@@ -15,6 +15,7 @@ class DatabaseLogger : public QObject
     Q_OBJECT
 
     QSqlDatabase            db;
+    int                     lastStartId = -1;
 
 public:
     explicit    DatabaseLogger(QObject *parent = nullptr);
@@ -22,6 +23,12 @@ public:
 
     bool        open();
     void        close();
+
+    inline bool isOpen() const {
+        return db.isOpen();
+    }
+
+    QString     getRecentTable();
 
 signals:
 
