@@ -21,7 +21,7 @@ CONFIG(debug, debug|release) {
 
 DEFINES += "VERSION_MAJOR=1"
 DEFINES += "VERSION_MINOR=2"
-DEFINES += "VERSION_BUILD=1"
+DEFINES += "VERSION_BUILD=2"
 
 SOURCES += \
     databaselogger.cpp \

@@ -56,7 +56,7 @@ QString DatabaseLogger::getRecentTable()
     QString sTable;
     QSqlQuery q("select * from (select * from event order by event_ts desc limit 6) as a  order by event_ts asc", db);
 
-    sTable += "<table border=\"1\">\n";
+    sTable += "<table border=\"1\" style=\"font-family:monospace; font-size: 12pt;\">\n";
     sTable += "  <tr><th>ID</th><th>Date/Time</th><th>Type</th><th>Payload</th><th>Ref</th></tr>\n";
     while (q.next()) {
         QSqlRecord  record = q.record();
@@ -93,6 +93,10 @@ void DatabaseLogger::handleLog(QString type, QString payload)
 
     q.prepare("INSERT INTO event (event_type, event_payload, event_ref, event_host) VALUES (?, ?, ?, ?)");
 
+    if (type.compare("start", Qt::CaseInsensitive) == 0) {
+        lastStartId = 0;
+    }
+
     q.bindValue(0, type);
     q.bindValue(1, payload);
     q.bindValue(2, (lastStartId != -1)?lastStartId:0);
@@ -104,7 +108,8 @@ void DatabaseLogger::handleLog(QString type, QString payload)
 
     if (type.compare("start", Qt::CaseInsensitive) == 0) {
         lastStartId = q.lastInsertId().toInt();
-    } else if (type.compare("stop", Qt::CaseInsensitive) == 0) {
-        lastStartId = -1;
     }
+//    else if (type.compare("stop", Qt::CaseInsensitive) == 0) {
+//        lastStartId = -1;
+//    }
 }

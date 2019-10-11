@@ -369,10 +369,24 @@ bool MainWindow::startBgProcess(QString script_path)
         sMessage = "Starting script...";
         repaint();
 
+        scriptLogFile = new QTemporaryFile(QDir::tempPath() + "/jt-log.XXXXXX");
+        scriptLogFile->setAutoRemove(false);
+
+        if (!scriptLogFile->open()) {
+            qWarning() << "Unable to open temporary file";
+        } else {
+            qInfo() << "Scripts log file = " << scriptLogFile->fileName();
+        }
+
+        QStringList     script_args = {
+            scriptLogFile->fileName(),
+        };
+
         //QString script_path = QDir::homePath() + QDir::separator() + settings_path + QDir::separator() + "launch-test.sh";
         qInfo() << "Starting script @ " << script_path;
 
-        bgProcess.start(script_path);
+        bgProcess.start(script_path, script_args);
+
         if (bgProcess.waitForStarted()) {
             qInfo() << "Process Id : " << bgProcess.processId();
             runningScriptName = script_path;
@@ -729,7 +743,26 @@ void MainWindow::processComplete(int exitCode, QProcess::ExitStatus exitStatus)
 
     bgProcess.close();
     bgRunning = false;
+
     emit logMessage("STOP", runningScriptName);
+
+    QString logFileName = scriptLogFile->fileName();
+
+    scriptLogFile->close();
+    delete scriptLogFile;
+    scriptLogFile = nullptr;
+
+    QFile resultFile(logFileName);
+    QString log;
+    if (resultFile.open(QIODevice::ReadOnly)) {
+        log = resultFile.readAll();
+    }
+    if (!log.isEmpty()) {
+        emit logMessage("LOG", log);
+    }
+
+    resultFile.remove();
+
     runningScriptName.clear();
 }
 

@@ -117,13 +117,14 @@ private:
     DisplayStylePtr style;
     DisplayStyleVec styleVec;
 
-    bool            bgRunning           = false;
-    QString         runningScriptName;
-    QProcess        bgProcess;
+    bool                    bgRunning           = false;
+    QString                 runningScriptName;
+    QProcess                bgProcess;
 
-    qint64          appPid              = -1;
+    qint64                  appPid              = -1;
 
-    TestScriptMgr   scriptMgr;
+    TestScriptMgr           scriptMgr;
+    QTemporaryFile *        scriptLogFile  = nullptr;
 
     Scheduler               sched;
 
