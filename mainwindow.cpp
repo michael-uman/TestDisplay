@@ -390,7 +390,7 @@ bool MainWindow::startBgProcess(QString script_path)
         if (bgProcess.waitForStarted()) {
             qInfo() << "Process Id : " << bgProcess.processId();
             runningScriptName = script_path;
-            emit logMessage("START", script_path);
+            emit logMessage("START", script_path, 0);
             bgRunning = bResult = true;
         } else {
             qWarning() << "Script failed to start";
@@ -744,7 +744,7 @@ void MainWindow::processComplete(int exitCode, QProcess::ExitStatus exitStatus)
     bgProcess.close();
     bgRunning = false;
 
-    emit logMessage("STOP", runningScriptName);
+    emit logMessage("STOP", runningScriptName, exitCode);
 
     QString logFileName = scriptLogFile->fileName();
 
@@ -758,7 +758,7 @@ void MainWindow::processComplete(int exitCode, QProcess::ExitStatus exitStatus)
         log = resultFile.readAll();
     }
     if (!log.isEmpty()) {
-        emit logMessage("LOG", log);
+        emit logMessage("LOG", log, 0);
     }
 
     resultFile.remove();

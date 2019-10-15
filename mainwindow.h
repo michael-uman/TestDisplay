@@ -64,7 +64,7 @@ public slots:
     void stopCommand();
 
 signals:
-    void logMessage(QString type, QString payload);
+    void logMessage(QString type, QString payload, int exitCode);
 
 protected:
     friend class TestDisplayRequestHandler;

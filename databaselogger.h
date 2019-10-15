@@ -33,7 +33,7 @@ public:
 signals:
 
 public slots:
-    void        handleLog(QString type, QString payload);
+    void        handleLog(QString type, QString payload, int exitCode);
 };
 
 #endif // DATABASELOGGER_H

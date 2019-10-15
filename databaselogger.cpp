@@ -83,7 +83,7 @@ QString DatabaseLogger::getRecentTable()
     return sTable;
 }
 
-void DatabaseLogger::handleLog(QString type, QString payload)
+void DatabaseLogger::handleLog(QString type, QString payload, int exitCode)
 {
     QSqlQuery q(db);
 
@@ -91,7 +91,7 @@ void DatabaseLogger::handleLog(QString type, QString payload)
     qDebug() << Q_FUNC_INFO << type << payload;
 #endif
 
-    q.prepare("INSERT INTO event (event_type, event_payload, event_ref, event_host) VALUES (?, ?, ?, ?)");
+    q.prepare("INSERT INTO event (event_type, event_payload, event_ref, event_host, event_code) VALUES (?, ?, ?, ?, ?)");
 
     if (type.compare("start", Qt::CaseInsensitive) == 0) {
         lastStartId = 0;
@@ -101,6 +101,7 @@ void DatabaseLogger::handleLog(QString type, QString payload)
     q.bindValue(1, payload);
     q.bindValue(2, (lastStartId != -1)?lastStartId:0);
     q.bindValue(3, QHostInfo::localHostName());
+    q.bindValue(4, exitCode);
 
     if (!q.exec()) {
         qWarning() << "Error adding event" << q.lastError();
