@@ -1,6 +1,8 @@
 #include <QDebug>
 #include <QSqlError>
 #include <QHostInfo>
+#include <QMutexLocker>
+
 #include "databaselogger.h"
 
 #define PSQL_USERNAME       "developer"
@@ -9,7 +11,8 @@
 #define PSQL_PASSWD         "realmagic"
 
 DatabaseLogger::DatabaseLogger(QObject *parent)
-    : QObject(parent)
+    : QObject(parent),
+      dbMutex(QMutex::Recursive)
 {
 }
 
@@ -20,6 +23,8 @@ DatabaseLogger::~DatabaseLogger()
 
 bool DatabaseLogger::open()
 {
+    QMutexLocker locker(&dbMutex);
+
     bool result = false;
 
     db = QSqlDatabase::addDatabase("QPSQL", "psql");
@@ -43,6 +48,8 @@ bool DatabaseLogger::open()
 
 void DatabaseLogger::close()
 {
+    QMutexLocker locker(&dbMutex);
+
     if (db.isOpen()) {
         db.close();
 #ifdef DEBUG_DB
@@ -53,6 +60,8 @@ void DatabaseLogger::close()
 
 QString DatabaseLogger::getRecentTable()
 {
+    QMutexLocker locker(&dbMutex);
+
     QString sTable;
     QSqlQuery q("select * from (select * from event order by event_ts desc limit 6) as a  order by event_ts asc", db);
 
@@ -85,7 +94,8 @@ QString DatabaseLogger::getRecentTable()
 
 void DatabaseLogger::handleLog(QString type, QString payload, int exitCode)
 {
-    QSqlQuery q(db);
+    QMutexLocker    locker(&dbMutex);
+    QSqlQuery       q(db);
 
 #ifdef DEBUG_DB
     qDebug() << Q_FUNC_INFO << type << payload;

@@ -7,6 +7,7 @@
 #include <QSqlRecord>
 #include <QDebug>
 #include <QDateTime>
+#include <QMutex>
 
 //#define DEBUG_DB
 
@@ -16,6 +17,7 @@ class DatabaseLogger : public QObject
 
     QSqlDatabase            db;
     int                     lastStartId = -1;
+    QMutex                  dbMutex;
 
 public:
     explicit    DatabaseLogger(QObject *parent = nullptr);
