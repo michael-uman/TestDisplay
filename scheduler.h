@@ -8,6 +8,7 @@
 #include <QDomDocument>
 #include <QFileSystemWatcher>
 #include <QSharedPointer>
+#include <QMutex>
 
 /**
  * Enumeration of day of week.
@@ -141,6 +142,7 @@ public:
     void                    enable(bool enabled);
     bool                    isEnabled() const;
 
+    bool                    html(QString & text);
 signals:
     void                    runCommand(QString command);
 
@@ -153,6 +155,7 @@ protected:
     ScheduleEventVector     events;
     QFileSystemWatcher      watcher;
     QAtomicInteger<bool>    bSchedulerEnabled = true;
+    QMutex                  schedMutex;
 
     bool                    initTimer();
     void                    releaseTimer();

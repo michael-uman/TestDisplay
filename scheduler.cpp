@@ -3,6 +3,7 @@
 #include <QDomDocument>
 #include <QFile>
 #include <QTime>
+#include <QMutexLocker>
 #include "scheduler.h"
 
 bool eventTimeRef::doEventsConflict(const eventTimeRef &a, const eventTimeRef &b)
@@ -176,7 +177,8 @@ bool ScheduleEvent::isEventTime(const QDateTime &ts)
 
 Scheduler::Scheduler(QObject *parent)
     : QObject(parent),
-      watcher(parent)
+      watcher(parent),
+      schedMutex(QMutex::Recursive)
 {
     qDebug() << Q_FUNC_INFO;
     initTimer();
@@ -194,6 +196,7 @@ bool Scheduler::scheduleEvent(QString name, QString desc,
                               QString cmd, qint32 dow,
                               int hour, int min)
 {
+    QMutexLocker lock(&schedMutex);
     // Check for conflicts
     for (const auto & ev : events) {
         if ((ev->eventTime.dow & dow) != 0) {
@@ -218,6 +221,7 @@ bool Scheduler::scheduleEvent(QString name, QString desc,
 
 bool Scheduler::scheduleEvent(const ScheduleEvent &event)
 {
+    QMutexLocker lock(&schedMutex);
     // Check for conflict
     for (const auto & ev : events) {
         if ((ev->eventTime.dow & event.eventTime.dow) != 0) {
@@ -241,6 +245,7 @@ bool Scheduler::scheduleEvent(const ScheduleEvent &event)
  */
 void Scheduler::dump()
 {
+    QMutexLocker lock(&schedMutex);
     qDebug() << "Dump of all events in scheduler:";
 
     for (const auto & ev : events) {
@@ -253,6 +258,7 @@ void Scheduler::dump()
  */
 bool Scheduler::loadSchedule(const QString &scheduleName)
 {
+    QMutexLocker lock(&schedMutex);
     QDomDocument        doc;
     QFile               xmlFile(scheduleName);
 
@@ -321,6 +327,7 @@ bool Scheduler::loadSchedule(const QString &scheduleName)
 
 bool Scheduler::saveSchedule(QString &scheduleName)
 {
+    QMutexLocker lock(&schedMutex);
     qDebug() << Q_FUNC_INFO;
     Q_UNUSED(scheduleName)
     return false;
@@ -336,6 +343,7 @@ bool Scheduler::watchFile(QString & filename)
 
 void Scheduler::enable(bool enabled)
 {
+    QMutexLocker lock(&schedMutex);
     bSchedulerEnabled = enabled;
     qInfo() << "Scheduler " << QString((enabled)?"Enabled":"Disabled");
 }
@@ -345,8 +353,60 @@ bool Scheduler::isEnabled() const
     return bSchedulerEnabled;
 }
 
+bool Scheduler::html(QString & text)
+{
+    QMutexLocker lock(&schedMutex);
+
+    QString html;
+
+    html += "<table border=\"1\">\n";
+    html += "\t<tr><th>Time</th><th>Sun</th><th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th></tr>\n";
+
+    for (int hour = 0 ; hour < 24 ; hour++) {
+        for (int min = 0 ; min < 60 ; min++) {
+            QString line;
+            auto ts = QString::asprintf("%02d:%02d", hour, min);
+            line = "\t<tr><td>" + ts + "</td>";
+            bool found_event = false;
+            bool event_line = false;
+            for (int day = 0 ; day < 7 ; day++) {
+                qDebug() << "day " << day << hour << min;
+                for (auto event : events) {
+                    if (((1L << day) & event->eventTime.dow) != 0) {
+                        for (auto time : event->eventTime.times) {
+                            if ((time.hour == hour) && (time.min == min)) {
+                                qDebug() << hour << min << event->eventName;
+                                line += "<td>" + event->eventName + "</td>";
+                                found_event = true;
+                                event_line = true;
+                            }
+                        }
+                    }
+                }
+                if (!found_event) {
+                    line += "<td></td>";
+                }
+
+                found_event = false;
+            }
+
+            if (event_line) {
+                line += "</tr>\n";
+                html += line;
+            }
+        }
+    }
+
+    html += "</table>\n";
+
+    text = html;
+
+    return true;
+}
+
 void Scheduler::timeout()
 {
+    QMutexLocker lock(&schedMutex);
     QDateTime   currentDateTime = QDateTime::currentDateTime();
 
     // Run through all events checking if the time has come...
