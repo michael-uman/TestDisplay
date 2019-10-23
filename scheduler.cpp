@@ -359,7 +359,7 @@ bool Scheduler::html(QString & text)
 
     QString html;
 
-    html += "<table border=\"1\">\n";
+    html += "<table border=\"1\" style=\"font-family:monospace; font-size: 12pt;\">\n";
     html += "\t<tr><th>Time</th><th>Sun</th><th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th></tr>\n";
 
     for (int hour = 0 ; hour < 24 ; hour++) {
@@ -370,12 +370,10 @@ bool Scheduler::html(QString & text)
             bool found_event = false;
             bool event_line = false;
             for (int day = 0 ; day < 7 ; day++) {
-                qDebug() << "day " << day << hour << min;
                 for (auto event : events) {
                     if (((1L << day) & event->eventTime.dow) != 0) {
                         for (auto time : event->eventTime.times) {
                             if ((time.hour == hour) && (time.min == min)) {
-                                qDebug() << hour << min << event->eventName;
                                 line += "<td>" + event->eventName + "</td>";
                                 found_event = true;
                                 event_line = true;

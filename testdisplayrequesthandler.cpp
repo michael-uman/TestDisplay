@@ -136,7 +136,7 @@ bool TestDisplayRequestHandler::handleStatusPage(HttpResponse &response)
 
 bool TestDisplayRequestHandler::handleSysInfo(HttpResponse &response)
 {
-//    MainWindow *    pParent = static_cast<MainWindow*>(parent());
+    MainWindow *    pParent = static_cast<MainWindow*>(parent());
     QString         sResponseText;
 
 //    response.setHeader("Refresh", "2;url=/stat/");
@@ -165,7 +165,13 @@ bool TestDisplayRequestHandler::handleSysInfo(HttpResponse &response)
     sResponseText += "<tr><td>Current Time</td><td>" + QDateTime::currentDateTime().toString() + "</td></tr>";
     sResponseText += "<tr><td>Host OS</td><td>" + QSysInfo::prettyProductName() + "</td></tr>";
     sResponseText += "<tr><td>Operating Temp</td><td>" + getRaspberryPi3Temp() + "</td></tr>";
-    sResponseText += "</table>";
+    sResponseText += "</table>\n";
+
+    sResponseText += "<h3>Schedule</h3>";
+    QString schedule;
+    if (pParent->sched.html(schedule)) {
+        sResponseText += schedule;
+    }
     sResponseText += "</body></html>";
 
     response.write(sResponseText.toUtf8());

@@ -63,7 +63,15 @@ QString DatabaseLogger::getRecentTable()
     QMutexLocker locker(&dbMutex);
 
     QString sTable;
-    QSqlQuery q("select * from (select * from event order by event_ts desc limit 6) as a  order by event_ts asc", db);
+    QSqlQuery q(db);
+
+    // Only list logs from this host...
+    q.prepare("SELECT * FROM (SELECT * FROM event WHERE event_host = ? ORDER BY event_ts DESC LIMIT 6) AS a ORDER BY event_ts ASC");
+    q.bindValue(0, QHostInfo::localHostName());
+
+    if (!q.exec()) {
+        qDebug() << "Error in query!";
+    }
 
     sTable += "<table border=\"1\" style=\"font-family:monospace; font-size: 12pt;\">\n";
     sTable += "  <tr><th>ID</th><th>Date/Time</th><th>Type</th><th>Payload</th><th>Ref</th></tr>\n";

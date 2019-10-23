@@ -42,6 +42,25 @@ void debugOut(QtMsgType type, const QMessageLogContext &context,
     }
 }
 
+void createConfigFile(QString filename) {
+    QFile configFile(filename);
+
+    if (configFile.open(QIODevice::WriteOnly)) {
+        QString configuration = "[listener]\n"
+                "cleanupInterval=60000\n"
+                "maxMultiPartSize=10000000\n"
+                "maxRequestSize=16000\n"
+                "maxThreads=100\n"
+                "minThreads=4\n"
+                "port=8080\n"
+                "readTimeout=60000\n"
+                "\n"
+                "[settings]\n"
+                "scheduler=False\n";
+
+        configFile.write(configuration.toUtf8());
+    }
+}
 int main(int argc, char *argv[])
 {
     RunGuard guard( "wunderbar.com" );
@@ -60,6 +79,18 @@ int main(int argc, char *argv[])
     a.setApplicationName("TestDisplay");
     a.setOrganizationName("wunderbar");
     a.setOrganizationDomain("wunderbar.com");
+
+    {
+        QSettings settings;
+        qDebug() << "Settings file " << settings.fileName();
+        QFile settingFile(settings.fileName());
+        if (!settingFile.exists()) {
+            qDebug() << "Setting file does not exist!";
+            createConfigFile(settings.fileName());
+        } else {
+            qDebug() << "Setting file exists!";
+        }
+    }
     MainWindow w;
     w.show();
     return a.exec();
