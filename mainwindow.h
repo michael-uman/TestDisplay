@@ -55,6 +55,10 @@ public:
         return bDisplayInUse;
     }
 
+    inline bool dbLoggingEnabled() {
+        return dblog.isOpen();
+    }
+
 public slots:
     void onTimer();
     void onConnection();

@@ -67,12 +67,15 @@ win32 {
 
 FORMS +=
 
-xmlfiles.path = /opt/$${TARGET}/bin
+xmlfiles.path = /opt/$${TARGET}/xml
 xmlfiles.files += xml/styles.xml xml/schedule.xml xml/scripts.xml
+cssfiles.path = /opt/$${TARGET}/webinterface/styles
+cssfiles.files += webinterface/styles/testdisplay.css
+
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
-!isEmpty(target.path): INSTALLS += target xmlfiles
+!isEmpty(target.path): INSTALLS += target xmlfiles cssfiles
 
 DISTFILES += \
     xml/schedule.xml \

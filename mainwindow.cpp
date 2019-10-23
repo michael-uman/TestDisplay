@@ -213,10 +213,9 @@ void MainWindow::paintEvent(QPaintEvent * event)
         case displayState::DISPLAY_TEST:
             break;
         }
-
     }
 
-    QWidget::paintEvent(event);
+    QMainWindow::paintEvent(event);
 }
 
 void MainWindow::keyPressEvent(QKeyEvent * event)
@@ -242,6 +241,8 @@ void MainWindow::keyPressEvent(QKeyEvent * event)
         } else {
             qWarning() << "Attempted to stop a script but no script running...";
         }
+    } else if (event->key() == Qt::Key_F1) {
+        qDebug() << "F1 Key Hit";
     } else {
         if (!bgRunning) {
             TestScriptPtr scriptInfo = scriptMgr.getScriptForKey(event->key());
