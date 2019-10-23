@@ -30,7 +30,20 @@ The *TestDisplay* application has been successfully built on the following platf
 * Ubuntu 18.04 running on x86_64
 * Ubuntu 18.04 running on Arm (RasPi2 & 3)
 
+Minimum supported Qt Version 5.10
+
 ## Configuration
+
+*TestDisplay* uses several files for configuration. These files are listed below:
+
+### Files
+
+| File | Description |
+| ---- | ----------- |
+| `~/.config/wunderbar/TestDisplay.conf` | General configuration file setting options. |
+| `~/.testdisplay/schedule.xml` | Configure which scripts are run at which times on which day of the week.|
+| `~/.testdisplay/scripts.xml` | Configure which scripts can be launched by key-press. |
+| `~/.testdisplay/styles.xml` | Configure available styles (fonts, colors, etc.) |
 
 `-TBD-`
 
