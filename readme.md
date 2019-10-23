@@ -29,8 +29,11 @@ The *TestDisplay* application has been successfully built on the following platf
 
 * Ubuntu 18.04 running on x86_64
 * Ubuntu 18.04 running on Arm (RasPi2 & 3)
+* Partial support for Raspberry Pi running Yocto kernel.
 
 Minimum supported Qt Version 5.10
+
+**NOTE:** Database logging does not work for the Yocto build. The database drivers are not built and as a result the Qt database interface is unusable.
 
 ## Configuration
 
@@ -58,3 +61,108 @@ The web interface runs, by default, listening on port `8080`.
 Here is a sample of the display of the status page of the web interface.
 
 ![Web Interface](doc/webinterface.png)
+
+## Python Driver
+
+A driver for Python apps is provided.
+
+### Installation
+
+Generate the Python wheel file:
+
+```
+$> cd python/module
+$> python3 setup.py sdist bdist_wheel
+```
+
+Install the wheel file:
+
+```
+$> pip install testdisplay-0.0.1-py3-none-any.whl
+```
+
+### Documentation
+```
+Help on module sup.display_driver in sup:
+
+NAME
+    sup.display_driver
+
+CLASSES
+    builtins.object
+        DisplayDriver
+    
+    class DisplayDriver(builtins.object)
+     |  Methods defined here:
+     |  
+     |  __enter__(self)
+     |  
+     |  __exit__(self, exc_type, exc_val, exc_tb)
+     |  
+     |  __init__(self, host='localhost', port=4321)
+     |      Initialize self.  See help(type(self)) for accurate signature.
+     |  
+     |  close(self)
+     |      Terminate connection to the TestDisplay application.
+     |      :return:
+     |  
+     |  get_script_list(self) -> list
+     |      Return a list of script objects
+     |  
+     |  get_status(self) -> object
+     |      Get TestDisplay status.
+     |      :return: Dictionary containing status.
+     |  
+     |  get_style_list(self) -> list
+     |      Return a list of style objects
+     |  
+     |  open(self)
+     |      Open the socket to communicate with the TestDisplay application.
+     |      :return:
+     |  
+     |  reset(self) -> bool
+     |      Reset TestDisplay application to default state.
+     |      :return:
+     |  
+     |  set_heading(self, heading:str) -> bool
+     |      Set the Test Display heading
+     |      :param heading: Text to display
+     |      :return: True on success, False on failure.
+     |  
+     |  set_message(self, message:str) -> bool
+     |      Set the Test Display message
+     |      :param message: Text to display
+     |      :return: True on success, False on failure.
+     |  
+     |  set_text(self, heading:str, message:str) -> bool
+     |      Set both heading and message in a single call.
+     |      :param heading: Text for heading
+     |      :param message: Text for message
+     |      :return: True on success.
+     |  
+     |  set_time(self, status:bool) -> bool
+     |      Enable/Disable time display.
+     |      :param status: True to enable, False to disable.
+     |      :return:
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data descriptors defined here:
+     |  
+     |  __dict__
+     |      dictionary for instance variables (if defined)
+     |  
+     |  __weakref__
+     |      list of weak references to the object (if defined)
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data and other attributes defined here:
+     |  
+     |  display_host = None
+     |  
+     |  display_port = 4321
+     |  
+     |  sock = None
+
+FILE
+    /home/muman/gitroot/TestDisplay-repo/python/module/sup/display_driver.py
+```
