@@ -62,24 +62,98 @@ Here is a sample of the display of the status page of the web interface.
 
 ![Web Interface](doc/webinterface.png)
 
+## Control Port
+
+The **TestDisplay** application opens a TCP/IP port (port 4321) and listens for commands in the form `'XXXX:[ARG]:[ARG...]'` where `XXXX` is the command followed by a *COLON* and then any arguments.
+
+Commands will return a result, usually the string `OK` or `FAIL` to indicate whether the command completed successfully.
+
+### Supported Commands
+
+| COMMAND | DESCRIPTION | RESPONSE |
+| ------- | ----------- | -------- |
+| `HEAD:heading` | Set the heading to the string `heading` | `OK` |
+| `MESG:message` | Set the message to the string `message` | `OK` |
+| `QUIT:` | Close the current connection | `OK` |
+| `TIME:[1\|0]` | Enable/Disable time display | `OK` |
+| `REST:` | Reset the device to initial state | `OK` |
+| `STYL:#` | Set the display style to index `#` | `OK` |
+| `STAT:` | Get the status from the display | `STAT:heading:message:style_name:time_en:sched_en:script_run:script_name` |
+| `RUNK:ch` | Run script corresponding to key `ch` | `OK` |
+| `STOP:` | Stop running script by sending SIGINT signale | `OK` |
+| `LIST:SCRIPT` | List all loaded scripts | list of elements in the form `ch:script_name:script_path` terminating in `OK` |
+| `LIST:STYLE` | List all loaded styles | list of elements in the form `style_name:head_family:head_size:mesg_family:mesg_size:fg_color:bg_color` |
+| `KILL:` | Kill the running **TestDisplay** instance | No response |
+| `SCHED:[1\|0]` | Enable/Disable scheduler | `OK` |
+| `TEXT:heading:message` | Set both heading and message with one command | `OK` |
+
 ## Python Driver
 
 A driver for Python apps is provided.
 
 ### Installation
 
-Generate the Python wheel file:
+#### Generate the Python wheel file
 
 ```
 $> cd python/module
 $> python3 setup.py sdist bdist_wheel
 ```
 
-Install the wheel file:
+The wheel file `testdisplay-0.0.1-py3-none-any.whl` will be found in the `dist` directory.
+
+#### Install the wheel file
 
 ```
 $> pip install testdisplay-0.0.1-py3-none-any.whl
 ```
+
+### Example Code
+
+```python
+from sup.display_driver import DisplayDriver
+
+    def main():
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--server', type=str, default='localhost', help='Server to connect to')
+    parser.add_argument('--port', type=int, default=4321, help='Port to connect to')
+
+    opts = parser.parse_args()
+
+    try:
+        with DisplayDriver(host=opts.server, port=opts.port) as disp:
+            try:
+                disp.set_text('Joe-Tap Automated Unit Test',
+                              'Connection Established')
+                sleep(1)
+
+                for x in range(0,3):
+                    disp.set_message('Running \'Invalid Voltage\' test...')
+                    sleep(4)
+                    disp.set_message('Running \'Communication Down\' test...')
+                    sleep(4)
+                    disp.set_message('Running \'Dispense Liquid\' test...')
+                    sleep(4)
+                    disp.set_message('Running \'Low Pressure\' test...')
+                    sleep(4)
+                    disp.set_message('Running \'Lockout\' test...')
+                    sleep(6)
+                    disp.set_message('Running \'Clean Warn\' test...')
+                    sleep(6)
+            except KeyboardInterrupt as e:
+                print('Quitting..')
+                # Reset the display before exit...
+
+            disp.reset()
+    except ConnectionRefusedError:
+        print('Unable to establish connection with remote display...')
+    except BrokenPipeError as e:
+        print('Remote display has disconnected unexpectedly...')
+
+```
+
 
 ### Documentation
 ```
