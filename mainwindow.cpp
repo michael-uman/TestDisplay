@@ -89,6 +89,7 @@ MainWindow::MainWindow(QWidget *parent)
     updateTimer.start();
 
     if (dblog.open()) {
+        qInfo() << "Database logging enabled";
         connect(this, &MainWindow::logMessage, &dblog, &DatabaseLogger::handleLog);
     } else {
         qWarning() << "Unable to open database for logging";

@@ -2,13 +2,31 @@
 #include <QSqlError>
 #include <QHostInfo>
 #include <QMutexLocker>
+#include <QSettings>
 
 #include "databaselogger.h"
 
-#define PSQL_USERNAME       "developer"
-#define PSQL_DBNAME         "developer"
-#define PSQL_HOSTNAME       "wunderbar-ub18-dev"
-#define PSQL_PASSWD         "realmagic"
+#define PSQL_USERNAME       QString("developer")
+#define PSQL_DBNAME         QString("developer")
+#define PSQL_HOSTNAME       QString("wunderbar-ub18-dev")
+#define PSQL_PASSWD         QString("realmagic")
+
+void DatabaseLogger::getDatabaseSettings(QString &username,
+                                         QString &dbname,
+                                         QString &hostname,
+                                         QString &passwd)
+{
+    QSettings settings;
+
+    settings.beginGroup("settings");
+    username = settings.value("username", QVariant::fromValue(PSQL_USERNAME)).toString();
+    dbname = settings.value("dbname", QVariant::fromValue(PSQL_DBNAME)).toString();
+    hostname = settings.value("hostname", QVariant::fromValue(PSQL_HOSTNAME)).toString();
+    passwd = settings.value("password", QVariant::fromValue(PSQL_PASSWD)).toString();
+    settings.endGroup();
+
+    return;
+}
 
 DatabaseLogger::DatabaseLogger(QObject *parent)
     : QObject(parent),
@@ -29,11 +47,15 @@ bool DatabaseLogger::open()
 
     db = QSqlDatabase::addDatabase("QPSQL", "psql");
 
+    QString username, dbname, hostname, passwd;
+
+    getDatabaseSettings(username, dbname, hostname, passwd);
+
     if (db.isValid()) {
-        db.setUserName(PSQL_USERNAME);
-        db.setPassword(PSQL_DBNAME);
-        db.setHostName(PSQL_HOSTNAME);
-        db.setPassword(PSQL_PASSWD);
+        db.setUserName(username);
+        db.setPassword(dbname);
+        db.setHostName(hostname);
+        db.setPassword(passwd);
 
         if (db.open()) {
 #ifdef DEBUG_DB

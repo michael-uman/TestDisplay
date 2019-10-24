@@ -19,6 +19,10 @@ class DatabaseLogger : public QObject
     int                     lastStartId = -1;
     QMutex                  dbMutex;
 
+    void                    getDatabaseSettings(QString & username,
+                                                QString & dbname,
+                                                QString & hostname,
+                                                QString & passwd);
 public:
     explicit    DatabaseLogger(QObject *parent = nullptr);
     virtual     ~DatabaseLogger();
