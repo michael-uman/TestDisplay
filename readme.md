@@ -6,6 +6,12 @@ The *TestDisplay* application is an application used to display the current stat
 
 The primary objective of *TestDisplay* is to spawn python unit-tests through shell scripts. The results of the tests are stored in a database backend (currently using `PostgreSQL`).
 
+## Screenshot
+
+![TestDisplay Main](doc/testdisplay-main.png)
+
+The top line is called the `heading`, the second line is called the `message` then next line is called `time` and the bottom line is called `status`.
+
 ## Features
 
 The *TestDisplay* application boasts the following features:
@@ -18,6 +24,7 @@ The *TestDisplay* application boasts the following features:
     * Commands to set heading and message text.
     * Commands to inquire status.
     * Commands to start/stop test scripts.
+    * Python scriptable.
 * Web interface
     * Ability to start/stop tests.
     * Display status of running tests.
@@ -80,7 +87,7 @@ Commands will return a result, usually the string `OK` or `FAIL` to indicate whe
 | `STYL:#` | Set the display style to index `#` | `OK` |
 | `STAT:` | Get the status from the display | `STAT:heading:message:style_name:time_en:sched_en:script_run:script_name` |
 | `RUNK:ch` | Run script corresponding to key `ch` | `OK` |
-| `STOP:` | Stop running script by sending SIGINT signale | `OK` |
+| `STOP:` | Stop running script by sending SIGINT signal | `OK` |
 | `LIST:SCRIPT` | List all loaded scripts | list of elements in the form `ch:script_name:script_path` terminating in `OK` |
 | `LIST:STYLE` | List all loaded styles | list of elements in the form `style_name:head_family:head_size:mesg_family:mesg_size:fg_color:bg_color` |
 | `KILL:` | Kill the running **TestDisplay** instance | No response |
