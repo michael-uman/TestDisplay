@@ -1,6 +1,4 @@
 import socket
-# import sys
-# import time
 
 
 class DisplayDriver:
@@ -210,4 +208,58 @@ class DisplayDriver:
                 'script': data_list[6]
             }
             return status_obj
+        else:
+            raise Exception('Not connected')
 
+    def set_elapsed(self, t: int, state: int):
+        if not t in [0, 1]:
+            raise Exception('Invalid timer id')
+        if not state in [0,1]:
+            raise Exception('Invalid state')
+
+        full_line = 'ELAP:{}:{}\n'.format(t, state);
+
+        if self.sock:
+            self.sock.sendall(full_line.encode())
+            data = self.sock.recv(8192).decode('ascii').strip()
+            result = (data == 'OK')
+        else:
+            raise Exception('Not Connected')
+
+        return result
+
+    def start_elapsed(self, t: int):
+        if t not in [0, 1]:
+            raise Exception('Invalid timer id')
+
+        full_line = 'ELAP:{}:START\n'.format(t)
+
+        if self.sock:
+            self.sock.sendall(full_line.encode())
+            data = self.sock.recv(8192).decode('ascii').strip()
+            result = (data == 'OK')
+        else:
+            raise Exception('Not Connected')
+
+        return result
+
+    def stop_elapsed(self, t: int):
+        if t not in [0, 1]:
+            raise Exception('Invalid timer id')
+
+        full_line = 'ELAP:{}:STOP\n'.format(t)
+
+        if self.sock:
+            self.sock.sendall(full_line.encode())
+            data = self.sock.recv(8192).decode('ascii').strip()
+            result = (data == 'OK')
+        else:
+            raise Exception('Not Connected')
+
+        return result
+
+    def elapsed_reset(self):
+        self.stop_elapsed(0)
+        self.set_elapsed(0, 0)
+        self.stop_elapsed(1)
+        self.set_elapsed(1, 0)

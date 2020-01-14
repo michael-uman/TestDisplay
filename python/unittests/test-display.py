@@ -86,19 +86,28 @@ def main():
             try:
                 disp.set_text('Joe-Tap Automated Unit Test',
                               'Connection Established')
+                disp.set_elapsed(0, 1)
+                disp.set_elapsed(1, 1)
+                disp.start_elapsed(1)
                 sleep(1)
 
                 for x in range(0,3):
+                    disp.start_elapsed(0)
                     disp.set_message('Running \'Invalid Voltage\' test...')
                     sleep(4)
+                    disp.start_elapsed(0)
                     disp.set_message('Running \'Communication Down\' test...')
                     sleep(4)
+                    disp.start_elapsed(0)
                     disp.set_message('Running \'Dispense Liquid\' test...')
                     sleep(4)
+                    disp.start_elapsed(0)
                     disp.set_message('Running \'Low Pressure\' test...')
                     sleep(4)
+                    disp.start_elapsed(0)
                     disp.set_message('Running \'Lockout\' test...')
                     sleep(6)
+                    disp.start_elapsed(0)
                     disp.set_message('Running \'Clean Warn\' test...')
                     sleep(6)
             except KeyboardInterrupt as e:
@@ -106,6 +115,8 @@ def main():
                 # Reset the display before exit...
 
             disp.reset()
+            disp.elapsed_reset()
+
     except ConnectionRefusedError:
         print('Unable to establish connection with remote display...')
     except BrokenPipeError as e:
