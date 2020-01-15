@@ -115,6 +115,20 @@ QSize MainWindow::getTextSize(QString text, QPainter & p) {
     return QSize(tw, th);
 }
 
+bool convertSecsToTimestring(double ts, QString & stamp) {
+    int h,m,s;
+
+    h = ts / (60 * 60);
+    ts -= h * (60 * 60);
+    m = ts / 60;
+    ts -= m * 60;
+    s = ts;
+    qDebug() << h << ":" << m << ":" << s;
+
+    stamp = QString("%1:%2:%3").arg((int)h, 2, 10, QLatin1Char('0')).arg((int)m, 2, 10, QLatin1Char('0')).arg((int)s, 2, 10, QLatin1Char('0'));
+
+    return true;
+}
 /**
  * Draw the main test display window.
  */
@@ -150,6 +164,32 @@ void MainWindow::paintMainDisplay()
         p.setFont(QFont("Ubuntu Light", 22));
         txtSize = getTextSize(sDateTime, p);
         p.drawText((sw - txtSize.width())/2, sh - 130, sDateTime);
+    }
+
+    QString timelapse;
+    // Elapsed timers
+    if (bShowTimer[0] && elapsed[0].isValid()) {
+        QTime dt(0,0,0);
+        QString text;
+        double ts = (double)elapsed[0].elapsed() / (double)1000;
+        convertSecsToTimestring(ts, text);
+        timelapse += text;
+    }
+
+    if (bShowTimer[1] && elapsed[1].isValid()) {
+        QTime dt(0,0,0);
+        QString text;
+        double ts = (double)elapsed[1].elapsed() / (double)1000;
+        convertSecsToTimestring(ts, text);
+        if (!timelapse.isEmpty())
+            timelapse.append('-');
+        timelapse += text;
+    }
+
+    if (!timelapse.isEmpty()) {
+        p.setFont(QFont("FreeMono", 18, QFont::Bold, true));
+        txtSize = getTextSize(timelapse, p);
+        p.drawText((sw - txtSize.width())/2, sh - 90, timelapse);
     }
 
     p.setFont(QFont("Bitstream Vera Sans Mono", 12));
@@ -587,7 +627,37 @@ bool MainWindow::parseText(QString line, QString &response)
         if (element[0] == "TEXT") {
             setHeading(element[1]);
             setMessage(element[2]);
-        } else {
+        } else if (element[0] == "ELAP") {
+            if ((element[1] == "0") || (element[1] == "1")) {
+                int timerID = element[1].toInt();
+
+                if (element[2] == "START") {
+                    elapsed[timerID].start();
+                } else if (element[2] == "STOP") {
+                    qint64 ts = 0;
+                    ts = elapsed[timerID].elapsed();
+                    elapsed[timerID].invalidate();
+                    qDebug() << "Timer" << timerID << "stopped @" << (float)ts/(float)1000;
+                } else if ((element[2] == "1") || (element[2] == "ON")) {
+                    if (bShowTimer[timerID] == false) {
+                        bShowTimer[timerID] = true;
+                    } else {
+                        response = "FAIL";
+                    }
+                } else if ((element[2] == "0") || (element[2] == "OFF")) {
+                    if (bShowTimer[timerID] == true) {
+                        bShowTimer[timerID] = false;
+                    } else {
+                        response = "FAIL";
+                    }
+                } else {
+                    response = "FAIL";
+                }
+            } else {
+                response = "FAIL";
+            }
+        }
+        else {
             response = "FAIL";
         }
     }

@@ -9,6 +9,7 @@
 #include <QTouchEvent>
 #include <QProcess>
 #include <QSharedPointer>
+#include <QElapsedTimer>
 
 #include "testdisplay_defaults.h"
 #include "displaystyle.h"
@@ -133,13 +134,16 @@ private:
     Scheduler               sched;
 
     QSettingsPtr            appSettings;
-    HttpListener *          httpListener   = nullptr;
-    HttpRequestHandler *    reqHandler     = nullptr;
+    HttpListener *          httpListener    = nullptr;
+    HttpRequestHandler *    reqHandler      = nullptr;
 
     DatabaseLogger          dblog;
     int                     lastLogID;
 
     static QStringList      optionFilenames;
+
+    bool                    bShowTimer[2]   = { false, false };
+    QElapsedTimer           elapsed[2];
 };
 
 #endif // MAINWINDOW_H
