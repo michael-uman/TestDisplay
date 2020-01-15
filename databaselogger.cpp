@@ -103,14 +103,17 @@ QString DatabaseLogger::getRecentTable()
         QDateTime   eventTS;
         QString     eventType;
         QString     eventPayload;
-//        int         eventCode;
 
         eventId         = record.value("event_id").toInt();
         eventTS         = record.value("event_ts").toDateTime();
         eventType       = record.value("event_type").toString();
         eventPayload    = record.value("event_payload").toString();
-//        eventCode       = record.value("event_code").toInt();
         eventRef        = record.value("event_ref").toInt();
+
+        // Wrap the log payload by replacing CR with <BR>
+        if (eventType == "LOG") {
+            eventPayload.replace("\n", "<BR>");
+        }
 
         sTable += "  <tr><td>" + QString::number(eventId) + "</td><td>" + eventTS.toString() +
                 "</td><td>" + eventType + "</td><td>" + eventPayload + "</td><td>" +
