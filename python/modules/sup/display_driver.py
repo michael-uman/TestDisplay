@@ -2,6 +2,9 @@ import socket
 
 
 class DisplayDriver:
+    """
+    Display Driver Class
+    """
     display_host = None
     display_port = 4321
 
@@ -20,7 +23,6 @@ class DisplayDriver:
     def open(self):
         """
         Open the socket to communicate with the TestDisplay application.
-        :return:
         """
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -32,7 +34,6 @@ class DisplayDriver:
     def close(self):
         """
         Terminate connection to the TestDisplay application.
-        :return:
         """
         if self.sock:
             self.sock.sendall('QUIT:\n'.encode())
@@ -45,7 +46,6 @@ class DisplayDriver:
     def reset(self) -> bool:
         """
         Reset TestDisplay application to default state.
-        :return:
         """
         full_line = 'REST:\n'
         if self.sock:
@@ -59,7 +59,8 @@ class DisplayDriver:
 
     def set_heading(self, heading: str) -> bool:
         """
-        Set the Test Display heading
+        Set the Test Display heading.
+
         :param heading: Text to display
         :return: True on success, False on failure.
         """
@@ -77,7 +78,8 @@ class DisplayDriver:
 
     def set_message(self, message: str) -> bool:
         """
-        Set the Test Display message
+        Set the Test Display message.
+
         :param message: Text to display
         :return: True on success, False on failure.
         """
@@ -96,6 +98,7 @@ class DisplayDriver:
     def set_text(self, heading: str, message: str) -> bool:
         """
         Set both heading and message in a single call.
+
         :param heading: Text for heading
         :param message: Text for message
         :return: True on success.
@@ -113,6 +116,7 @@ class DisplayDriver:
     def set_time(self, status:bool) -> bool:
         """
         Enable/Disable time display.
+
         :param status: True to enable, False to disable.
         :return:
         """
@@ -192,6 +196,7 @@ class DisplayDriver:
     def get_status(self) -> object:
         """
         Get TestDisplay status.
+
         :return: Dictionary containing status.
         """
         full_line = "STAT:\n"
@@ -212,6 +217,13 @@ class DisplayDriver:
             raise Exception('Not connected')
 
     def set_elapsed(self, t: int, state: int):
+        """
+        Enable or disable the display of selected elapsed timer.
+
+        :param t: Timer ID (Either 0 or 1)
+        :param state: 1 for Enable, 0 for Disable
+        :return: True on success, False otherwise.
+        """
         if not t in [0, 1]:
             raise Exception('Invalid timer id')
         if not state in [0,1]:
@@ -229,6 +241,12 @@ class DisplayDriver:
         return result
 
     def start_elapsed(self, t: int):
+        """
+        Start selected Elapsed timer.
+
+        :param t: Timer ID (Either 0 or 1)
+        :return: True on success, False otherwise.
+        """
         if t not in [0, 1]:
             raise Exception('Invalid timer id')
 
@@ -244,6 +262,12 @@ class DisplayDriver:
         return result
 
     def stop_elapsed(self, t: int):
+        """
+        Stop selected Elapsed timer.
+
+        :param t: Timer ID (Either 0 or 1)
+        :return: True on success, False otherwise.
+        """
         if t not in [0, 1]:
             raise Exception('Invalid timer id')
 

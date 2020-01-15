@@ -28,6 +28,7 @@ The *TestDisplay* application boasts the following features:
 * Web interface
     * Ability to start/stop tests.
     * Display status of running tests.
+    * Display log of recently run tests.
     * Display existing schedule.
 
 ## Compatability
@@ -93,12 +94,17 @@ Commands will return a result, usually the string `OK` or `FAIL` to indicate whe
 | `KILL:` | Kill the running **TestDisplay** instance | No response |
 | `SCHED:[1\|0]` | Enable/Disable scheduler | `OK` |
 | `TEXT:heading:message` | Set both heading and message with one command | `OK` |
+| `ELAP:[0|1]:[0|OFF|1|ON]` | Enable or Disable display of timer 0 or timer 1 | `OK` or `FAIL` |
+| `ELAP:[0|1]:START` | Start Elapsed timer 0 or timer 1. | `OK` or `FAIL` |
+| `ELAP:[0|1]:STOP` | Stop Elapsed timer 0 or timer 1. | `OK` or `FAIL` |
 
 ## Python Driver
 
-A driver for Python apps is provided.
+A driver for Python apps is provided. The Python driver is supplied as a module. This module provides a class which exposes the entire command interface.
 
 ### Installation
+
+This section discusses the installation of the display module.
 
 #### Generate the Python wheel file
 
@@ -172,78 +178,103 @@ NAME
 CLASSES
     builtins.object
         DisplayDriver
-    
+
     class DisplayDriver(builtins.object)
+     |  Display Driver Class
+     |
      |  Methods defined here:
-     |  
+     |
      |  __enter__(self)
-     |  
+     |
      |  __exit__(self, exc_type, exc_val, exc_tb)
-     |  
+     |
      |  __init__(self, host='localhost', port=4321)
      |      Initialize self.  See help(type(self)) for accurate signature.
-     |  
+     |
      |  close(self)
      |      Terminate connection to the TestDisplay application.
-     |      :return:
-     |  
+     |
+     |  elapsed_reset(self)
+     |
      |  get_script_list(self) -> list
      |      Return a list of script objects
-     |  
+     |
      |  get_status(self) -> object
      |      Get TestDisplay status.
+     |
      |      :return: Dictionary containing status.
-     |  
+     |
      |  get_style_list(self) -> list
      |      Return a list of style objects
-     |  
+     |
      |  open(self)
      |      Open the socket to communicate with the TestDisplay application.
-     |      :return:
-     |  
+     |
      |  reset(self) -> bool
      |      Reset TestDisplay application to default state.
-     |      :return:
-     |  
+     |
+     |  set_elapsed(self, t:int, state:int)
+     |      Enable or disable the display of selected elapsed timer.
+     |
+     |      :param t: Timer ID (Either 0 or 1)
+     |      :param state: 1 for Enable, 0 for Disable
+     |      :return: True on success, False otherwise.
+     |
      |  set_heading(self, heading:str) -> bool
-     |      Set the Test Display heading
+     |      Set the Test Display heading.
+     |
      |      :param heading: Text to display
      |      :return: True on success, False on failure.
-     |  
+     |
      |  set_message(self, message:str) -> bool
-     |      Set the Test Display message
+     |      Set the Test Display message.
+     |
      |      :param message: Text to display
      |      :return: True on success, False on failure.
-     |  
+     |
      |  set_text(self, heading:str, message:str) -> bool
      |      Set both heading and message in a single call.
+     |
      |      :param heading: Text for heading
      |      :param message: Text for message
      |      :return: True on success.
-     |  
+     |
      |  set_time(self, status:bool) -> bool
      |      Enable/Disable time display.
+     |
      |      :param status: True to enable, False to disable.
      |      :return:
-     |  
+     |
+     |  start_elapsed(self, t:int)
+     |      Start selected Elapsed timer.
+     |
+     |      :param t: Timer ID (Either 0 or 1)
+     |      :return: True on success, False otherwise.
+     |
+     |  stop_elapsed(self, t:int)
+     |      Stop selected Elapsed timer.
+     |
+     |      :param t: Timer ID (Either 0 or 1)
+     |      :return: True on success, False otherwise.
+     |
      |  ----------------------------------------------------------------------
      |  Data descriptors defined here:
-     |  
+     |
      |  __dict__
      |      dictionary for instance variables (if defined)
-     |  
+     |
      |  __weakref__
      |      list of weak references to the object (if defined)
-     |  
+     |
      |  ----------------------------------------------------------------------
      |  Data and other attributes defined here:
-     |  
+     |
      |  display_host = None
-     |  
+     |
      |  display_port = 4321
-     |  
+     |
      |  sock = None
 
 FILE
-    /home/muman/gitroot/TestDisplay-repo/python/module/sup/display_driver.py
+    /home/developer/development/gitroot/TestDisplay/python/modules/sup/display_driver.py
 ```
