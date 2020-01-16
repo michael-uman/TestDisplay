@@ -36,6 +36,7 @@ SOURCES += \
     testscriptmanager.cpp
 
 HEADERS += \
+    commandline.h \
     databaselogger.h \
     displaystyle.h \
     displayxmlparser.h \
