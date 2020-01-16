@@ -17,6 +17,7 @@
 #include "scheduler.h"
 #include "httplistener.h"
 #include "databaselogger.h"
+#include "commandline.h"
 
 using HttpListener          = stefanfrings::HttpListener;
 using HttpRequestHandler    = stefanfrings::HttpRequestHandler;
@@ -144,6 +145,25 @@ private:
 
     bool                    bShowTimer[2]   = { false, false };
     QElapsedTimer           elapsed[2];
+
+    void                    initCommands();
+    QVector<CMDENTRY>       commandVec;
+
+    bool                    CmdHead(CommandInfo & info);
+    bool                    CmdMesg(CommandInfo & info);
+    bool                    CmdQuit(CommandInfo & info);
+    bool                    CmdTime(CommandInfo & info);
+    bool                    CmdRest(CommandInfo & info);
+    bool                    CmdStyl(CommandInfo & info);
+    bool                    CmdStat(CommandInfo & info);
+    bool                    CmdRunk(CommandInfo & info);
+    bool                    CmdStop(CommandInfo & info);
+    bool                    CmdList(CommandInfo & info);
+    bool                    CmdKill(CommandInfo & info);
+    bool                    CmdSched(CommandInfo & info);
+    bool                    CmdText(CommandInfo & info);
+    bool                    CmdElap(CommandInfo & info);
+    bool                    CmdVers(CommandInfo & info);
 };
 
 #endif // MAINWINDOW_H

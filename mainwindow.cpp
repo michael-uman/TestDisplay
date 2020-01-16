@@ -95,6 +95,8 @@ MainWindow::MainWindow(QWidget *parent)
         qWarning() << "Unable to open database for logging";
     }
 
+    initCommands();
+
     // Start HTTP Server...
     appSettings->beginGroup("listener");
     qDebug() << "Settings file @ " << appSettings->fileName();
@@ -542,129 +544,41 @@ bool MainWindow::loadScripts()
 }
 
 /**
- *  Parsing the user supplied line.
+ * Parse the command using commandVec and return response.
  */
-bool MainWindow::parseText(QString line, QString &response)
-{
-    bool            bResult     = false;
-    QStringList     element     = line.split(':');
-    int             splitsize   = element.length();
+bool MainWindow::parseText(QString line, QString & response) {
+    QStringList     args        = line.split(':', QString::SkipEmptyParts);
+    QString         command     = args[0];
 
-#ifdef DEBUG
-    qDebug() << element;
-#endif
+    qDebug() << args;
 
-    response = "OK";
+    // Remove root command from list, leaving only the arguments...
+    args.erase(args.begin());
 
-    if (splitsize == 1) {
-        setMessage(element[0]);
-    } else if (splitsize == 2) {
-        if (element[0] == "HEAD") {
-            setHeading(element[1]);
-        } else if (element[0] == "MESG") {
-            setMessage(element[1]);
-        } else if (element[0] == "QUIT") {
-            bResult = true;
-        } else if (element[0] == "TIME") {
-            bTimeEnabled = (element[1] == "1");
-        } else if (element[0] == "REST") {
-            resetText();
-        } else if (element[0] == "STYL") {
-            int index = element[1].toInt();
-            if (index < styleVec.length()) {
-                style = styleVec[index];
+    for (auto n : commandVec) {
+        if (n.command == command) {
+            // Check argument count...
+            if ((n.minOptions >= args.size()) && (n.maxOptions <= args.size())) {
+                CommandInfo info;
+                info.args = args;
+                bool result = (this->*(n.callback))(info);
+                response = info.response;
+                return result;
             } else {
+                qDebug() << "Invalid # of arguments" << "\n";
                 response = "FAIL";
+                return false;
             }
-        } else if (element[0] == "STAT") {
-            response = get_status_string();
-        } else if (element[0] == "RUNK") {
-            if (element[1].length() == 1) {
-                TestScriptPtr script = scriptMgr.getScriptForKey(element[1].front().toLatin1());
-                if (!script.isNull()) {
-                    if (!startBgProcess(script->path())) {
-                        response = "FAIL";
-                    }
-                } else {
-                    response = "FAIL";
-                }
-            } else {
-                response = "FAIL";
-            }
-        } else if (element[0] == "STOP") {
-            if (bgRunning) {
-                stopBgProcess();
-            } else {
-                qWarning() << "No background process is running...";
-                response = "FAIL";
-            }
-        } else if (element[0] == "LIST") {
-            if (element[1] == "SCRIPT") {
-                response = get_script_list();
-            } else if (element[1] == "STYLE") {
-                response = get_style_list();
-            } else {
-                qWarning() << "Invalid LIST type " << element[1];
-                response = "FAIL";
-            }
-        } else if (element[0] == "KILL") {
-            QKeyEvent quitEvent(QEvent::KeyPress, 'Q', Qt::NoModifier);
-            QCoreApplication::sendEvent(this, &quitEvent);
-        } else if (element[0] == "SCHED") {
-            if (element[1] == "0") {
-                sched.enable(false);
-            } else if (element[1] == "1") {
-                sched.enable(true);
-            } else {
-                qWarning() << "Invalid SCHED value " << element[1];
-                response = "FAIL";
-            }
-        } else {
-            qDebug() << "Unknown tag " << element[0];
-            response = "FAIL";
-        }
-    } else if (splitsize == 3) {
-        if (element[0] == "TEXT") {
-            setHeading(element[1]);
-            setMessage(element[2]);
-        } else if (element[0] == "ELAP") {
-            if ((element[1] == "0") || (element[1] == "1")) {
-                int timerID = element[1].toInt();
-
-                if (element[2] == "START") {
-                    elapsed[timerID].start();
-                } else if (element[2] == "STOP") {
-                    qint64 ts = 0;
-                    ts = elapsed[timerID].elapsed();
-                    elapsed[timerID].invalidate();
-                    qDebug() << "Timer" << timerID << "stopped @" << (float)ts/(float)1000;
-                } else if ((element[2] == "1") || (element[2] == "ON")) {
-                    if (bShowTimer[timerID] == false) {
-                        bShowTimer[timerID] = true;
-                    } else {
-                        response = "FAIL";
-                    }
-                } else if ((element[2] == "0") || (element[2] == "OFF")) {
-                    if (bShowTimer[timerID] == true) {
-                        bShowTimer[timerID] = false;
-                    } else {
-                        response = "FAIL";
-                    }
-                } else {
-                    response = "FAIL";
-                }
-            } else {
-                response = "FAIL";
-            }
-        }
-        else {
-            response = "FAIL";
         }
     }
 
-    return bResult;
+    response = "FAIL";
+    return false;
 }
 
+/**
+ * Return a string representing the current application state.
+ */
 QString MainWindow::get_status_string()
 {
     QMutexLocker locker(&mainMutex);
@@ -728,6 +642,228 @@ QString MainWindow::get_style_list()
     }
 
     return result;
+}
+
+/**
+ * Add commands to command vector.
+ */
+void MainWindow::initCommands()
+{
+    commandVec.push_back({ "HEAD",
+                           1, 1,
+                           &MainWindow::CmdHead });
+    commandVec.push_back({ "MESG",
+                           1, 1,
+                           &MainWindow::CmdMesg });
+    commandVec.push_back({ "QUIT",
+                           0, 0,
+                           &MainWindow::CmdQuit });
+    commandVec.push_back({ "TIME",
+                           1, 1,
+                           &MainWindow::CmdTime });
+    commandVec.push_back({ "REST",
+                           0, 0,
+                           &MainWindow::CmdRest });
+    commandVec.push_back({ "STYL",
+                           1, 1,
+                           &MainWindow::CmdStyl });
+    commandVec.push_back({ "STAT",
+                           0, 0,
+                           &MainWindow::CmdStat });
+    commandVec.push_back({ "RUNK",
+                           1, 1,
+                           &MainWindow::CmdRunk });
+    commandVec.push_back({ "STOP",
+                           0, 0,
+                           &MainWindow::CmdStop });
+    commandVec.push_back({ "LIST",
+                           1, 1,
+                           &MainWindow::CmdList });
+    commandVec.push_back({ "KILL",
+                           0, 0,
+                           &MainWindow::CmdKill });
+    commandVec.push_back({ "SCHED",
+                           1, 1,
+                           &MainWindow::CmdSched });
+    commandVec.push_back({ "TEXT",
+                           2, 2,
+                           &MainWindow::CmdText });
+    commandVec.push_back({ "ELAP",
+                           2, 2,
+                           &MainWindow::CmdElap });
+    commandVec.push_back({ "VERS",
+                           0, 0,
+                           &MainWindow::CmdVers });
+
+}
+
+bool MainWindow::CmdHead(CommandInfo &info)
+{
+    setHeading(info.args[0]);
+    return false;
+}
+
+bool MainWindow::CmdMesg(CommandInfo &info)
+{
+    setMessage(info.args[0]);
+    return false;
+}
+
+bool MainWindow::CmdQuit(CommandInfo &info)
+{
+    Q_UNUSED(info)
+    return true;
+}
+
+bool MainWindow::CmdTime(CommandInfo &info)
+{
+    bTimeEnabled = (info.args[0] == "1");
+    return false;
+}
+
+bool MainWindow::CmdRest(CommandInfo &info)
+{
+    Q_UNUSED(info)
+    resetText();
+    return false;
+}
+
+bool MainWindow::CmdStyl(CommandInfo &info)
+{
+    int index = info.args[0].toInt();
+    if (index < styleVec.length()) {
+        style = styleVec[index];
+    } else {
+        info.response = "FAIL";
+    }
+    return false;
+}
+
+bool MainWindow::CmdStat(CommandInfo &info)
+{
+    qDebug() << Q_FUNC_INFO;
+    Q_UNUSED(info);
+    info.response = get_status_string();
+    return false;
+}
+
+bool MainWindow::CmdRunk(CommandInfo &info)
+{
+    if (info.args[0].length() == 1) {
+        TestScriptPtr script = scriptMgr.getScriptForKey(info.args[0].front().toLatin1());
+        if (!script.isNull()) {
+            if (!startBgProcess(script->path())) {
+                info.response = "FAIL";
+            }
+        } else {
+            info.response = "FAIL";
+        }
+    } else {
+        info.response = "FAIL";
+    }
+    return false;
+}
+
+bool MainWindow::CmdStop(CommandInfo &info)
+{
+    if (bgRunning) {
+        stopBgProcess();
+    } else {
+        qWarning() << "No background process is running...";
+        info.response = "FAIL";
+    }
+
+    return false;
+}
+
+bool MainWindow::CmdList(CommandInfo &info)
+{
+    QString listType = info.args[0];
+
+    if (listType == "SCRIPT") {
+        info.response = get_script_list();
+    } else if (listType == "STYLE") {
+        info.response = get_style_list();
+    } else {
+        qWarning() << "Invalid LIST type " << listType;
+        info.response = "FAIL";
+    }
+
+    return false;
+}
+
+bool MainWindow::CmdKill(CommandInfo &info)
+{
+    Q_UNUSED(info)
+    QKeyEvent quitEvent(QEvent::KeyPress, 'Q', Qt::NoModifier);
+    QCoreApplication::sendEvent(this, &quitEvent);
+    return false;
+}
+
+bool MainWindow::CmdSched(CommandInfo &info)
+{
+    QString value = info.args[0];
+
+    if (value == "0") {
+        sched.enable(false);
+    } else if (value == "1") {
+        sched.enable(true);
+    } else {
+        qWarning() << "Invalid SCHED value " << value;
+        info.response = "FAIL";
+    }
+    return false;
+}
+
+bool MainWindow::CmdText(CommandInfo &info)
+{
+    setHeading(info.args[0]);
+    setMessage(info.args[1]);
+    return false;
+}
+
+bool MainWindow::CmdElap(CommandInfo & info)
+{
+    QString tID = info.args[0];
+    QString subCmd = info.args[1];
+
+    if ((tID == "0") || (tID == "1")) {
+        int timerID = tID.toInt();
+
+        if (subCmd == "START") {
+            elapsed[timerID].start();
+        } else if (subCmd == "STOP") {
+            qint64 ts = 0;
+            ts = elapsed[timerID].elapsed();
+            elapsed[timerID].invalidate();
+            qDebug() << "Timer" << timerID << "stopped @" << (float)ts/(float)1000;
+        } else if ((subCmd == "1") || (subCmd == "ON")) {
+            if (bShowTimer[timerID] == false) {
+                bShowTimer[timerID] = true;
+            } else {
+                info.response = "FAIL";
+            }
+        } else if ((subCmd == "0") || (subCmd == "OFF")) {
+            if (bShowTimer[timerID] == true) {
+                bShowTimer[timerID] = false;
+            } else {
+                info.response = "FAIL";
+            }
+        } else {
+            info.response = "FAIL";
+        }
+    } else {
+        info.response = "FAIL";
+    }
+
+    return false;
+}
+
+bool MainWindow::CmdVers(CommandInfo &info)
+{
+    QString version = QString("%1.%2.%3").arg(VERSION_MAJOR).arg(VERSION_MINOR).arg(VERSION_BUILD);
+    info.response = version;
+    return false;
 }
 
 void MainWindow::enableDateTime(bool enabled) {
