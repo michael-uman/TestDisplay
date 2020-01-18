@@ -146,6 +146,12 @@ private:
     bool                    bShowTimer[2]   = { false, false };
     QElapsedTimer           elapsed[2];
 
+#ifdef _LINUX
+    void                    initGpio();
+    void                    releaseGpio();
+    int                     pi = -1;
+#endif
+
     void                    initCommands();
     QVector<CMDENTRY>       commandVec;
 
@@ -164,6 +170,8 @@ private:
     bool                    CmdText(CommandInfo & info);
     bool                    CmdElap(CommandInfo & info);
     bool                    CmdVers(CommandInfo & info);
+    bool                    CmdGpio(CommandInfo & info);
+
 };
 
 #endif // MAINWINDOW_H
