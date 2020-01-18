@@ -16,6 +16,9 @@
 #include "processmanager.h"
 #include "testdisplayrequesthandler.h"
 #include "databaselogger.h"
+#ifdef _LINUX
+    #include <pigpiod_if2.h>
+#endif
 
 QStringList MainWindow::optionFilenames = {
     ".testdisplay/styles.xml",
@@ -97,6 +100,10 @@ MainWindow::MainWindow(QWidget *parent)
 
     initCommands();
 
+#ifdef _LINUX
+    initGpio();
+#endif
+
     // Start HTTP Server...
     appSettings->beginGroup("listener");
     qDebug() << "Settings file @ " << appSettings->fileName();
@@ -107,6 +114,9 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow()
 {
+#ifdef _LINUX
+    releaseGpio();
+#endif
     dblog.close();
 }
 
@@ -558,7 +568,7 @@ bool MainWindow::parseText(QString line, QString & response) {
     for (auto n : commandVec) {
         if (n.command == command) {
             // Check argument count...
-            if ((n.minOptions >= args.size()) && (n.maxOptions <= args.size())) {
+            if ((args.size() >= n.minOptions) && (args.size() <= n.maxOptions)) {
                 CommandInfo info;
                 info.args = args;
                 bool result = (this->*(n.callback))(info);
@@ -694,7 +704,11 @@ void MainWindow::initCommands()
     commandVec.push_back({ "VERS",
                            0, 0,
                            &MainWindow::CmdVers });
-
+#ifdef _LINUX
+    commandVec.push_back({ "GPIO",
+                           1, 2,
+                           &MainWindow::CmdGpio });
+#endif
 }
 
 bool MainWindow::CmdHead(CommandInfo &info)
@@ -741,8 +755,6 @@ bool MainWindow::CmdStyl(CommandInfo &info)
 
 bool MainWindow::CmdStat(CommandInfo &info)
 {
-    qDebug() << Q_FUNC_INFO;
-    Q_UNUSED(info);
     info.response = get_status_string();
     return false;
 }
@@ -866,6 +878,52 @@ bool MainWindow::CmdVers(CommandInfo &info)
     return false;
 }
 
+/*
+
+GPIO:<PIN>:[IN|OUT]
+GPIO:<PIN>:[1|0]
+GPIO:<PIN>
+
+*/
+
+bool MainWindow::CmdGpio(CommandInfo &info)
+{
+    unsigned int pinNum = info.args[0].toUInt();
+    if (pi >= 0) {
+        int res = -1;
+
+        if (info.args.size() == 1) {
+            // Read from GPIO
+            auto value = gpio_read(pi, pinNum);
+            info.response = QString("%1").arg(value);
+        } else {
+            QString cmd = info.args[1];
+            if (cmd == "IN") {
+                res = set_mode(pi, pinNum, PI_INPUT);
+                if (res != 0) {
+                    qDebug() << "Set mode failed :" << pigpio_error(res);
+                    info.response = "FAIL";
+                }
+            } else if (cmd == "OUT") {
+                res = set_mode(pi, pinNum, PI_OUTPUT);
+                if (res != 0) {
+                    qDebug() << "Set mode failed :" << pigpio_error(res);
+                    info.response = "FAIL";
+                }
+            } else if ((cmd == "1") || (cmd == "0")) {
+                int value = cmd.toInt();
+                gpio_write(pi, pinNum, value);
+            } else {
+                info.response = "FAIL";
+            }
+        }
+    } else {
+        info.response = "FAIL";
+    }
+
+    return false;
+}
+
 void MainWindow::enableDateTime(bool enabled) {
     QMutexLocker    locker(&mainMutex);
     bTimeEnabled = enabled;
@@ -985,3 +1043,35 @@ void MainWindow::stopCommand()
     stopBgProcess();
     return;
 }
+
+#ifdef _LINUX
+
+void MainWindow::initGpio() {
+    QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+    QString             pigpio_addr = env.value("PIGPIO_ADDR");
+
+    qDebug() << Q_FUNC_INFO;
+
+    if (!pigpio_addr.isEmpty()) {
+        qDebug() << "Connecting to" << pigpio_addr;
+
+        if ((pi = pigpio_start(pigpio_addr.toLatin1().data(), nullptr)) < 0) {
+            qDebug() << "Unable to establish connection to pigpiod!";
+        }
+    } else {
+        if ((pi = pigpio_start(nullptr, nullptr)) < 0) {
+            qDebug() << "Unable to establish connection to pigpiod!";
+        }
+    }
+}
+
+void MainWindow::releaseGpio() {
+    qDebug() << Q_FUNC_INFO;
+    if (pi > 0) {
+        qDebug() << "Detaching from pigpio server.";
+        pigpio_stop(pi);
+        pi = -1;
+    }
+}
+
+#endif

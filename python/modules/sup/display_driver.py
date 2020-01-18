@@ -283,7 +283,76 @@ class DisplayDriver:
         return result
 
     def elapsed_reset(self):
+        """
+        Reset both elapsed timers.
+
+        :return:
+        """
         self.stop_elapsed(0)
         self.set_elapsed(0, 0)
         self.stop_elapsed(1)
         self.set_elapsed(1, 0)
+
+        return True
+
+    def gpio_mode(self, pin: int, mode: str):
+        """
+        Set GPIO pin mode.
+
+        :param pin: BCM pin #
+        :param mode: IN or OUT
+        :return: True on success
+        """
+        if mode != 'IN' and mode != 'OUT':
+            raise Exception('Invalid mode')
+
+        full_line = 'GPIO:{}:{}\n'.format(pin, mode)
+        if self.sock:
+            self.sock.sendall(full_line.encode())
+            data = self.sock.recv(8192).decode('ascii').strip()
+            result = (data == 'OK')
+        else:
+            raise Exception('Not Connected')
+
+        return result
+
+    def gpio_write(self, pin: int, value: int):
+        """
+        Write to GPIO output pin.
+
+        :param pin: BCM pin # to write to.
+        :param value: 0 or 1
+        :return: True on success
+        """
+        if value not in [0, 1]:
+            raise Exception('Invalid value')
+
+        full_line = 'GPIO:{}:{}\n'.format(pin, value)
+        if self.sock:
+            self.sock.sendall(full_line.encode())
+            data = self.sock.recv(8192).decode('ascii').strip()
+            result = (data == 'OK')
+        else:
+            raise Exception('Not Connected')
+
+        return result
+
+    def gpio_read(self, pin: int):
+        """
+        Read from GPIO pin.
+
+        :param pin: BCM Pin # to read.
+        :return: 1 or 0
+        """
+        if value not in [0, 1]:
+            raise Exception('Invalid value')
+
+        full_line = 'GPIO:{}\n'.format(pin)
+        if self.sock:
+            self.sock.sendall(full_line.encode())
+            data = self.sock.recv(8192).decode('ascii').strip()
+            result = data
+        else:
+            raise Exception('Not Connected')
+
+        return result

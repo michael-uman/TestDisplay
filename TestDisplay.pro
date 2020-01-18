@@ -54,6 +54,10 @@ unix {
                linuxprocessmanager.cpp
     HEADERS += linuxprocessentry.h \
                linuxprocessmanager.h
+
+    LIBS += -lpigpiod_if2
+
+    DEFINES += _LINUX
 }
 
 win32 {
