@@ -146,7 +146,7 @@ private:
     bool                    bShowTimer[2]   = { false, false };
     QElapsedTimer           elapsed[2];
 
-#ifdef _LINUX
+#ifdef ENABLE_GPIO
     void                    initGpio();
     void                    releaseGpio();
     int                     pi = -1;

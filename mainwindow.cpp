@@ -16,7 +16,7 @@
 #include "processmanager.h"
 #include "testdisplayrequesthandler.h"
 #include "databaselogger.h"
-#ifdef _LINUX
+#ifdef ENABLE_GPIO
     #include <pigpiod_if2.h>
 #endif
 
@@ -100,7 +100,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     initCommands();
 
-#ifdef _LINUX
+#ifdef ENABLE_GPIO
     initGpio();
 #endif
 
@@ -114,7 +114,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow()
 {
-#ifdef _LINUX
+#ifdef ENABLE_GPIO
     releaseGpio();
 #endif
     dblog.close();
@@ -704,7 +704,7 @@ void MainWindow::initCommands()
     commandVec.push_back({ "VERS",
                            0, 0,
                            &MainWindow::CmdVers });
-#ifdef _LINUX
+#ifdef ENABLE_GPIO
     commandVec.push_back({ "GPIO",
                            1, 2,
                            &MainWindow::CmdGpio });
@@ -1044,7 +1044,7 @@ void MainWindow::stopCommand()
     return;
 }
 
-#ifdef _LINUX
+#ifdef ENABLE_GPIO
 
 void MainWindow::initGpio() {
     QProcessEnvironment env = QProcessEnvironment::systemEnvironment();

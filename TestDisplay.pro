@@ -57,7 +57,7 @@ unix {
 
     LIBS += -lpigpiod_if2
 
-    DEFINES += _LINUX
+    DEFINES += ENABLE_GPIO
 }
 
 win32 {
