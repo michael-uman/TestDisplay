@@ -51,11 +51,16 @@ HEADERS += \
 
 unix {
     SOURCES += linuxprocessentry.cpp \
-               linuxprocessmanager.cpp
-    HEADERS += linuxprocessentry.h \
-               linuxprocessmanager.h
+               linuxprocessmanager.cpp \
+               pigpio/pigpiod_if2.c \
+               pigpio/command.c
 
-    LIBS += -lpigpiod_if2
+    HEADERS += linuxprocessentry.h \
+               linuxprocessmanager.h \
+               pigpio/pigpiod_if2.h \
+               pigpio/command.h
+
+#    LIBS += -lpigpiod_if2
 
     DEFINES += ENABLE_GPIO
 }

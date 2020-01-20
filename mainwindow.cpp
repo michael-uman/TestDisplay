@@ -558,6 +558,14 @@ bool MainWindow::loadScripts()
  */
 bool MainWindow::parseText(QString line, QString & response) {
     QStringList     args        = line.split(':', QString::SkipEmptyParts);
+
+    // Make sure that the user entered a valid command...
+    if (args.size() == 0) {
+        qDebug() << "Invalid input...";
+        response = "FAIL";
+        return false;
+    }
+
     QString         command     = args[0];
 
     qDebug() << args;
