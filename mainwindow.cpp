@@ -112,7 +112,7 @@ MainWindow::~MainWindow()
 
 QSize MainWindow::getTextSize(QString text, QPainter & p) {
     QFontMetrics fm = p.fontMetrics();
-    int tw = fm.width(text);
+    int tw = fm.horizontalAdvance(text);
     int th = fm.height();
     return QSize(tw, th);
 }
