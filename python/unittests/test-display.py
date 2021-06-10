@@ -3,7 +3,8 @@ import datetime
 from sup.display_driver import DisplayDriver
 import unittest
 
-DEFAULT_HOST='raspberrypi2.wunderbar.internal'
+#DEFAULT_HOST='raspberrypi2.wunderbar.internal'
+DEFAULT_HOST='localhost'
 
 
 class DisplayTests(unittest.TestCase):

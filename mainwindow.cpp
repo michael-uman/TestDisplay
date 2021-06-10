@@ -197,7 +197,7 @@ void MainWindow::paintMainDisplay()
     p.setFont(QFont("Bitstream Vera Sans Mono", 12));
     p.drawText(64, sh - 24, "'Q' => EXIT / 'S' => STOP");
 
-    sText = QString("v%1.%2.%3 © 2019-2020 Wunder-Bar, Inc.").arg(VERSION_MAJOR).arg(VERSION_MINOR).arg(VERSION_BUILD);
+    sText = QString("v%1.%2.%3 © 2019-2021 UmanSoft, Inc.").arg(VERSION_MAJOR).arg(VERSION_MINOR).arg(VERSION_BUILD);
     txtSize = getTextSize(sText, p);
 
     p.drawText(sw - 70 - txtSize.width(), sh - 24, sText);
@@ -547,7 +547,7 @@ bool MainWindow::loadScripts()
  * Parse the command using commandVec and return response.
  */
 bool MainWindow::parseText(QString line, QString & response) {
-    QStringList     args        = line.split(':', QString::SkipEmptyParts);
+    QStringList     args        = line.split(':', Qt::SkipEmptyParts);
     QString         command     = args[0];
 
     qDebug() << args;
@@ -555,7 +555,7 @@ bool MainWindow::parseText(QString line, QString & response) {
     // Remove root command from list, leaving only the arguments...
     args.erase(args.begin());
 
-    for (auto n : commandVec) {
+    for (const auto & n : commandVec) {
         if (n.command == command) {
             // Check argument count...
             if ((n.minOptions >= args.size()) && (n.maxOptions <= args.size())) {
@@ -612,7 +612,7 @@ QString MainWindow::get_script_list()
 
     if (scriptMgr.size() > 0) {
         for (const auto & script : scriptMgr.getVec()) {
-            stream <<  script->key() << ":" << script->name() << ":" << script->path() << endl;
+            stream <<  script->key() << ":" << script->name() << ":" << script->path() << Qt::endl;
         }
         stream << "OK";
     } else {
@@ -634,7 +634,7 @@ QString MainWindow::get_style_list()
                        style->GetHeadingFontSpec() << ":" <<
                        style->GetMessageFontSpec() << ":" <<
                        style->GetBgColor().name() << ":" <<
-                       style->GetFgColor().name() << endl;
+                       style->GetFgColor().name() << Qt::endl;
         }
         stream << "OK";
     } else {

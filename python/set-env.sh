@@ -1,2 +1,2 @@
-export PYTHONPATH=module
+export PYTHONPATH=modules
 
